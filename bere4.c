@@ -11,6 +11,9 @@
 #define TAMANHO_MAXIMO_SENHA 8
 #define TAMANHO_MINIMO_SENHA 6
 
+// VariaveIS Globais
+float dinheiroCaixa;
+
 // Structs do sistema, Matriz heterogênea
 typedef struct {
     int id;
@@ -48,6 +51,14 @@ typedef struct {
   char nome[50];
 } Categorias;
 
+typedef struct {
+    int codigo;
+    char descricao[50]; 
+    float precoVenda;
+    int quantidade;
+    float total;
+} Carrinho;
+
 // Declarando as funções que vamos usar no código
 void menuPrincipal();
 int opcaoEscolhida();
@@ -61,6 +72,7 @@ void cadastroCategoria();
 void menuVendas();
 void opcaoVendas(int opcao);
 void novaVenda();
+void documentoVenda(Carrinho carrinho[], int numItensCarrinho);
 void carrinho();
 void sangria();
 void pagamento();
@@ -189,10 +201,6 @@ void opcaoCadastro(int opcao){
     }
 }
 
-void senhaInvalida(){
-     printf("\nLogin invalido. Deve ter entre %d e %d caracteres.\n", TAMANHO_MINIMO_USUARIO, TAMANHO_MAXIMO_USUARIO);
-}
-
 void cadastroUsuario(){
     FILE *file;
     Usuario usuario;
@@ -208,7 +216,7 @@ void cadastroUsuario(){
     // Coletar dados do usuário com tratamento de tamanho para o login
     while (!controlador) {
         printf("\nDigite o login do usuario (max %d caracteres): ", TAMANHO_MAXIMO_USUARIO);
-        fgets(usuario.login, sizeof(usuario.login), stdin);
+        scanf(" %[^\n]", usuario.login);
 
         // Remover o newline do final da string, se houver
         usuario.login[strcspn(usuario.login, "\n")] = '\0';
@@ -224,7 +232,7 @@ void cadastroUsuario(){
     controlador = 0;
     while (!controlador) {
         printf("Digite a senha do usuario (max %d caracteres): ", TAMANHO_MAXIMO_SENHA);
-        fgets(usuario.password, sizeof(usuario.password), stdin);
+        scanf(" %[^\n]", usuario.password);
 
         // Remover o newline do final da string, se houver
         usuario.password[strcspn(usuario.password, "\n")] = '\0';
@@ -232,7 +240,7 @@ void cadastroUsuario(){
         if (strlen(usuario.password) >= TAMANHO_MINIMO_SENHA && strlen(usuario.password) <= TAMANHO_MAXIMO_SENHA) {
             controlador = 1;
         } else {
-            senhaInvalida();
+            printf("\nLogin invalido. Deve ter entre %d e %d caracteres.\n", TAMANHO_MINIMO_USUARIO, TAMANHO_MAXIMO_USUARIO);
         }
     }
 
@@ -340,13 +348,13 @@ void cadastroProduto(){
 
     if (strcmp(produto.categoria, "Alimento") != 0 &&
         strcmp(produto.categoria, "Material de Limpeza") != 0 &&
-        strcmp(produto.categoria, "Panificação") != 0) {
-        printf("Erro: Categoria inválida. As categorias válidas são: Alimento, Material de Limpeza, Panificação.\n");
+        strcmp(produto.categoria, "Panificacao") != 0) {
+        printf("Erro: Categoria invalida. As categorias validas sao: Alimento, Material de Limpeza, Panificacao.\n");
         return;
     }
 
     if (produto.precoCompra <= 0.0f) {
-        printf("Erro: Preço de compra deve ser maior que zero.\n");
+        printf("Erro: Preco de compra deve ser maior que zero.\n");
         return;
     }
 
@@ -366,6 +374,8 @@ void cadastroProduto(){
     fclose(arquivo);
 
     printf("Produto cadastrado com sucesso!\n");
+
+    return cadastro;
 }
 
 void cadastroCategoria(){
@@ -449,7 +459,7 @@ void opcaoVendas(int opcao){
 }
 
 // Função para exibir o cabeçalho da lista de produtos
-void exibirCabecalho() {
+void exibirCabecalho(){
     printf("-----------------------------------------------------------------\n");
     printf("Codigo | Descricao        | Categoria         | Preco   | Estoque\n");
     printf("-----------------------------------------------------------------\n");
@@ -457,46 +467,117 @@ void exibirCabecalho() {
 
 // Função para exibir um produto
 void exibirProduto(Produtos p) {
-    printf("%-7d| %-18s| %-18s| R$ %-5.2f | %-6d\n", p.codigo, p.descricao, p.categoria, p.precoVenda, p.quantidadeEstoque);
-}
-
-// Função para simular a nova venda
-void novaVenda() {
-    // Array de produtos para simulação (pode ser substituído por leitura de arquivo ou banco de dados)
     Produtos produtos[] = {
         {1000, "Cafe", "Alimento", 0, 0, 7.70, 10, 0},
         {1001, "Esponja", "Material Limpeza", 0, 0, 2.99, 30, 0},
         {1002, "Biscoito doce", "Panificacao", 0, 0, 12.50, 5, 0}
     };
-    int numProdutos = sizeof(produtos) / sizeof(produtos[0]);
 
+    printf("%-7d| %-18s| %-18s| R$ %-5.2f | %-6d\n", p.codigo, p.descricao, p.categoria, p.precoVenda, p.quantidadeEstoque);
+}
+
+int carregarProdutos(Produtos listaProdutos[], int maxProdutos) {
+    FILE *arquivo;
+    int contador = 0;
+
+    // Abrindo o arquivo no modo leitura
+    arquivo = fopen("produtos.txt", "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo de produtos.\n");
+        return 0; // Retorna 0 indicando falha
+    }
+
+    // Lendo os produtos do arquivo e armazenando no array
+    while (fscanf(arquivo, "%d %s %s %f %f %f %d %d",
+                  &listaProdutos[contador].codigo,
+                  listaProdutos[contador].descricao,
+                  listaProdutos[contador].categoria,
+                  &listaProdutos[contador].precoCompra,
+                  &listaProdutos[contador].margemLucro,
+                  &listaProdutos[contador].precoVenda,
+                  &listaProdutos[contador].quantidadeEstoque,
+                  &listaProdutos[contador].estoqueMinimo) == 8) {
+        contador++;
+        if (contador >= maxProdutos) break; // Evita overflow do array
+    }
+
+    // Fechando o arquivo
+    fclose(arquivo);
+
+    return contador; // Retorna o número de produtos carregados
+}
+
+void novaVenda() {
+    Produtos produtos[50]; // Array para armazenar os produtos carregados
+    int numProdutos = carregarProdutos(produtos, 50); // Carrega os produtos do arquivo
+
+    int numItensCarrinho = 0;
     int codigoCompra;
     int quantidade;
     char continuarCompra = 's';
 
-    exibirCabecalho();
-
-    // Exibir a lista de produtos disponíveis
+    // Exibindo cabeçalho e lista de produtos disponíveis
+    printf("==== Produtos Disponiveis ====\n");
     for (int i = 0; i < numProdutos; i++) {
         exibirProduto(produtos[i]);
     }
 
-    // Simular a escolha e compra de produtos
+    // Simulando a escolha e compra de produtos
     while (continuarCompra == 's' || continuarCompra == 'S') {
-        printf("\nCarrinho de Compras");
-        printf("\nInforme o codigo do produto a ser comprado: ");
+        printf("\nCarrinho de Compras\n");
+        printf("Informe o codigo do produto a ser comprado: ");
         scanf("%d", &codigoCompra);
 
-        printf("\nInforme a quantidade: ");
+        printf("Informe a quantidade: ");
         scanf("%d", &quantidade);
 
-        // Aqui você implementaria a lógica para adicionar o produto ao carrinho de compra
+        // Procurando o produto escolhido pelo código
+        int encontrado = 0;
+        for (int i = 0; i < numProdutos; i++) {
+            if (produtos[i].codigo == codigoCompra) {
+                // Adicionando o produto ao carrinho
+                printf("Produto adicionado ao carrinho.\n");
+                printf("Descricao: %s\n", produtos[i].descricao);
+                printf("Preco Unitario: R$ %.2f\n", produtos[i].precoVenda);
+                printf("Quantidade: %d\n", quantidade);
+                printf("Total: R$ %.2f\n", produtos[i].precoVenda * quantidade);
+                encontrado = 1;
+                break;
+            }
+        }
+
+        if (!encontrado) {
+            printf("Produto nao encontrado.\n");
+        }
 
         printf("\nNovo item no carrinho de compra (s/n): ");
         scanf(" %c", &continuarCompra);
     }
 
     printf("\n\n"); // Espaçamento final
+}
+
+void documentoVenda(Carrinho carrinho[], int numItensCarrinho){
+    FILE *file;
+    file = fopen("venda.txt", "a"); // Abrir arquivo para escrita
+
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo.");
+        return;
+    }
+
+    fprintf(file, "***** Documento de Venda *****\n\n");
+    fprintf(file, "Produtos Comprados:\n");
+    for (int i = 0; i < numItensCarrinho; i++) {
+        fprintf(file, "Codigo: %d\n", carrinho[i].codigo);
+        fprintf(file, "Descricao: %s\n", carrinho[i].descricao);
+        fprintf(file, "Preco Unitario: %.2f\n", carrinho[i].precoVenda);
+        fprintf(file, "Quantidade: %d\n", carrinho[i].quantidade);
+        fprintf(file, "Total: %.2f\n\n", carrinho[i].total);
+    }
+
+    fclose(file); // Fechar arquivo após escrita
+    printf("Documento de venda gerado com sucesso.\n");
 }
 
 void dataAtual(){
@@ -519,7 +600,28 @@ void pagamento(){
 }
 
 void aberturaCaixa(){
-    // Implementar lógica para abertura do caixa
+
+    clear();
+    int numCaixa = 0;
+
+    printf("\n====== Abertura de Caixa ======\n");
+    printf("Seja bem-vindo ao sistema Bere.\n");
+    printf("Digite o valor para iniciar o caixa atual: R$ ");
+    scanf("%f", &dinheiroCaixa);
+ 
+    while (dinheiroCaixa <= 0) {
+        printf("\nValor minimo para abertura do caixa não atingido.");
+        printf("\nDigite novamente: R$ ");
+        scanf("%f", &dinheiroCaixa);
+    }
+
+    clear();
+    printf("\nCaixa numero %d aberto com sucesso, valor de inicio do caixa: R$ %.2f\n", (numCaixa + 1), dinheiroCaixa);
+    numCaixa++;
+
+    system("pause");
+
+    menuPrincipal();
 }
 
 void fechaCaixa(){

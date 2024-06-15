@@ -1,0 +1,15 @@
+***** Documento de Venda *****
+
+Produtos Comprados:
+Codigo: 1000
+Descricao: Cafe
+Preco Unitario: 7.70
+Quantidade: 2
+Total: 15.40
+
+Codigo: 1001
+Descricao: Esponja
+Preco Unitario: 2.99
+Quantidade: 2
+Total: 5.98
+
