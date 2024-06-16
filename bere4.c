@@ -74,8 +74,8 @@ void cadastroCategoria();
 void menuVendas();
 void opcaoVendas(int opcao);
 void novaVenda();
-void documentoVenda(Carrinho carrinho[], int numItensCarrinho);
-int produtosBereFixo(Produtos listaProdutos[], int indice);
+void documentoVenda(Carrinho *carrinho, int numItensCarrinho);
+int produtosBereFixo(Produtos *listaProdutos, int indice);
 void carrinho();
 void sangria();
 void pagamento();
@@ -127,29 +127,35 @@ int opcaoEscolhida(){
 }
 
 void opcoes(int opcao){
-    switch (opcao) {
-        case 1:
-            cadastro();
-            break;
-        case 2:
-            menuVendas();
-            break;
-        case 3:
-            aberturaCaixa();
-            break;
-        case 4:
-            fechaCaixa();
-            break;
-        case 5:
-            relatorios();
-            break;
-        case 6:
-            sair();
-            break;
-        default:
-            printf("\nOpcao desejada nao existe!\n");
-            break;
-    }
+    do
+    {
+        switch (opcao) {
+            case 1:
+                cadastro();
+                break;
+            case 2:
+                menuVendas();
+                break;
+            case 3:
+                aberturaCaixa();
+                break;
+            case 4:
+                fechaCaixa();
+                break;
+            case 5:
+                relatorios();
+                break;
+            case 6:
+                sair();
+                break;
+            default:
+                printf("\nOpcao desejada nao existe!\n");
+                break;
+        }
+
+        scanf("%d", &opcao); // Guarda a opcao escolhida pelo usuário
+
+    } while (opcao != 6);
 }
 
 void cadastro(){
@@ -181,6 +187,12 @@ void cadastro(){
 }
 
 void opcaoCadastro(int opcao){
+
+    while (opcao < 1 || opcao > 5) {
+        printf("\nOpcao invalida! Digite uma opcao valida: ");
+        scanf("%d", &opcao);
+    }
+
     switch (opcao) {
         case 1:
             cadastroUsuario();
@@ -345,10 +357,10 @@ void cadastroProduto(){
     scanf(" %[^\n]", produto.categoria); // Ignora espaços em branco antes da descrição
 
     printf("Informe o preco de compra do produto: ");
-    scanf("%.2f", &produto.precoCompra);
+    scanf("%f", &produto.precoCompra);
 
     printf("Informe a margem de lucro (em porcentagem): ");
-    scanf("%.2f", &produto.margemLucro);
+    scanf("%f", &produto.margemLucro);
 
     printf("Informe a quantidade em estoque: ");
     scanf("%d", &produto.quantidadeEstoque);
@@ -440,7 +452,7 @@ void menuVendas(){
 
     printf("\n========================================\n");
     printf("                VENDAS\n");
-    printf("========================================\n");
+    printf("==========================================\n");
 
     for (int i = 0; i < 4; i++) {
         printf(" %d - %s\n", vendas[i].id, vendas[i].nome);
@@ -456,39 +468,45 @@ void menuVendas(){
 }
 
 void opcaoVendas(int opcao){
+
+    while (opcao < 1 || opcao > 4) {
+        printf("\nOpcao invalida! Digite uma opcao valida: ");
+        scanf("%d", &opcao);
+    }
+
     switch (opcao) {
-        case 1:
-            novaVenda();
-            break;
-        case 2:
-            sangria();
-            break;
-        case 3:
-            pagamento();
-            break;
-        case 4:
-            printf("Retornando ao Menu Principal...\n");
-            menuPrincipal();
-            break;
-        default:
-            printf("\nOpcao desejada nao existe!\n");
-            break;
+    case 1:
+        novaVenda();
+        break;
+    case 2:
+        sangria();
+        break;
+    case 3:
+        pagamento();
+        break;
+    case 4:
+        menuPrincipal();
+        break;
+    default:
+        printf("\nOpcao desejada nao existe!\n");
+        break;
     }
 }
 
-void rodape(){
-    printf("-----------------------------------------------------------------\n");
-}
 // Função para exibir o cabeçalho da lista de produtos
 void exibirCabecalho(){
-    printf("-----------------------------------------------------------------\n");
-    printf("Codigo | Descricao        | Categoria         | Preco   | Estoque\n");
-    printf("-----------------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------\n");
+    printf("Codigo | Descricao         | Categoria         | Preco    | Estoque\n");
+    printf("-------------------------------------------------------------------\n");
 }
 
 // Função para exibir um produto
 void exibirProduto(Produtos p) {
-    printf("%-7d| %-18s| %-18s| R$ %-5.2f | %-6d\n", p.codigo, p.descricao, p.categoria, p.precoVenda, p.quantidadeEstoque);
+    printf("%-7d| %-18s| %-18s| R$ %-5.2f |  %-6d\n", p.codigo, p.descricao, p.categoria, p.precoVenda, p.quantidadeEstoque);
+}
+
+void rodape(){
+    printf("-------------------------------------------------------------------\n");
 }
 
 int carregarProdutos(Produtos listaProdutos[], int maxProdutos) {
@@ -524,6 +542,7 @@ int carregarProdutos(Produtos listaProdutos[], int maxProdutos) {
 
 // Função para processar uma nova venda
 void novaVenda() {
+    clear();
     Produtos produtos[100]; // Array para armazenar os produtos carregados e dinâmicos
     int numProdutos = carregarProdutos(produtos, 50); // Carrega os produtos do arquivo
     numProdutos = produtosBereFixo(produtos, numProdutos); // Adiciona os produtos dinâmicos
@@ -539,39 +558,41 @@ void novaVenda() {
     }
     rodape();
 
+    int encontrado = 0;
     // Simulando a escolha e compra de produtos
     while (continuarCompra == 's' || continuarCompra == 'S') {
         printf("\nCarrinho de Compras\n");
         printf("\nInforme o codigo do produto a ser comprado: ");
         scanf("%d", &codigoCompra);
 
-        printf("\nInforme a quantidade: ");
-        scanf("%d", &quantidade);
-
-        // Procurando o produto escolhido pelo código
-        int encontrado = 0;
         for (int i = 0; i < numProdutos; i++) {
-            if (produtos[i].codigo == codigoCompra) {
-                // Adicionando o produto ao carrinho
-                printf("\nProduto adicionado ao carrinho.\n");
-                printf("Descricao: %s\n", produtos[i].descricao);
-                printf("Preco Unitario: R$ %.2f\n", produtos[i].precoVenda);
-                printf("Quantidade: %d\n", quantidade);
-                printf("Total: R$ %.2f\n", produtos[i].precoVenda * quantidade);
+            if (produtos[i].codigo == codigoCompra){
                 encontrado = 1;
-                break;
             }
         }
 
         if (!encontrado) {
-            printf("Produto nao encontrado.\n");
+            printf("\nProduto nao encontrado.\n");
+            continue;
+        }
+
+        printf("\nInforme a quantidade: ");
+        scanf("%d", &quantidade);
+
+        // Procurando o produto escolhido pelo código
+        for (int i = 0; i < numProdutos; i++) {
+            printf("\nProduto adicionado ao carrinho.\n");
+            printf("Descricao: %s\n", produtos[i].descricao);
+            printf("Preco Unitario: R$ %.2f\n", produtos[i].precoVenda);
+            printf("Quantidade: %d\n", quantidade);
+            printf("Total: R$ %.2f\n", produtos[i].precoVenda * quantidade);
+            break;
         }
 
         printf("\nNovo item no carrinho de compra (s/n): ");
         scanf(" %c", &continuarCompra);
     }
-
-    printf("\n\n"); // Espaçamento final
+    menuVendas();
 }
 
 // Função para inicializar os produtos dinâmicos
