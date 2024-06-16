@@ -36,6 +36,7 @@ typedef struct {
     char rua[50];
     int numero;
     char celular[13];
+    char data[10];
 } Clientes;
 
 typedef struct {
@@ -76,11 +77,12 @@ void opcaoVendas(int opcao);
 void novaVenda();
 void documentoVenda(Carrinho *carrinho, int numItensCarrinho);
 int produtosBereFixo(Produtos *listaProdutos, int indice);
-void carrinho();
+void carrinho(Carrinho carrinho[], int numItens);
 void sangria();
 void pagamento();
 void aberturaCaixa();
 void fechaCaixa();
+void resetVariavelGlobal();
 void relatorios();
 void sair();
 void clear();
@@ -102,7 +104,6 @@ void menuPrincipal(){
     printf("\n========================================\n");
     printf("         SEJA BEM-VINDO(A) AO BERE\n");
     printf("         ESCOLHA UMA OPCAO ABAIXO:\n");
-    printf("========================================\n");
 
     for (int i = 0; i < 6; i++) {
         printf(" %d - %s\n", principal[i].id, principal[i].nome);
@@ -641,8 +642,15 @@ void dataAtual(){
     printf("Data da Compra: %d/%d/%d\n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
 }
 
-void carrinho(){
-
+void carrinho(Carrinho carrinho[], int numItens){
+    for (int i = 0; i < numItens; i++) {
+        printf("Item %d:\n", i + 1);
+        printf("Codigo: %d\n", carrinho[i].codigo);
+        printf("Descricao: %s\n", carrinho[i].descricao);
+        printf("Preco Unitario: R$ %.2f\n", carrinho[i].precoVenda);
+        printf("Quantidade: %d\n", carrinho[i].quantidade);
+        printf("Total: R$ %.2f\n\n", carrinho[i].total);
+    }
 }
 
 void sangria(){
@@ -650,7 +658,7 @@ void sangria(){
 }
 
 void pagamento(){
-
+    
 }
 
 void aberturaCaixa(){
@@ -682,15 +690,29 @@ void aberturaCaixa(){
 }
 
 void fechaCaixa(){
-    // Implementar lógica para fechamento do caixa
+    relatorios();
+
+    printf("\nCaixa Fechado com sucesso");
+    system("pause");
+
+    menuPrincipal();
 }
 
 void relatorios() {
-    // Implementar lógica para relatórios
+    printf("\nRelatório de Vendas");
+    system("pause");
+
+    menuPrincipal();
+}
+
+void resetVariavelGlobal(){
+    dinheiroCaixa= 0;
+    statusCaixa = 0;
+    numCaixa = 0;
 }
 
 void sair() {
-    // Implementar lógica para sair
+    exit(0);
 }
 
 void clear() {
