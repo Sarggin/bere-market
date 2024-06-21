@@ -103,7 +103,8 @@ void menuPrincipal(){
 
     printf("\n========================================\n");
     printf("         SEJA BEM-VINDO(A) AO BERE\n");
-    printf("         ESCOLHA UMA OPCAO ABAIXO:\n");
+    printf("         ESCOLHA UMA OPCAO ABAIXO");
+    printf("\n========================================\n");
 
     for (int i = 0; i < 6; i++) {
         printf(" %d - %s\n", principal[i].id, principal[i].nome);
