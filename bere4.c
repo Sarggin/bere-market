@@ -16,33 +16,34 @@ float dinheiroCaixa;
 bool statusCaixa = 0;
 int numCaixa = 0;
 
-// Structs do sistema, Matriz heterogênea
+
+// Structs do sistema, Matrizes heterogêneas
 typedef struct {
     int id;
     char nome[50];
 } Menu;
 
 typedef struct {
-    char login[TAMANHO_MAXIMO_USUARIO];
-    char password[TAMANHO_MAXIMO_SENHA];
+    char *login;
+    char *password;
     int type; // 1 para Administrador, 2 para Usuário
 } Usuario;
 
 typedef struct {
     int id;
-    char nome[50];
-    char nomeSocial[50];
-    char cpf[11];
-    char rua[50];
+    char *nome;
+    char *nomeSocial;
+    char *cpf;
+    char *rua;
     int numero;
-    char celular[13];
-    char data[10];
+    char *celular;
+    char *data;
 } Clientes;
 
 typedef struct {
   int codigo;
-  char descricao[100];
-  char categoria[20];
+  char *descricao;
+  char *categoria;
   float precoCompra;
   float margemLucro;
   float precoVenda;
@@ -81,6 +82,7 @@ void carrinho(Carrinho carrinho[], int numItens);
 void sangria();
 void pagamento();
 void aberturaCaixa();
+void permisaoCaixa();
 void fechaCaixa();
 void resetVariavelGlobal();
 void relatorios();
@@ -88,8 +90,7 @@ void sair();
 void clear();
 void dataAtual();
 
-// Execução das Funções
-void menuPrincipal(){
+void menuPrincipal() {
     clear();
 
     Menu principal[] = {
@@ -101,25 +102,36 @@ void menuPrincipal(){
         {6, "Sair"},
     };
 
-    printf("\n========================================\n");
-    printf("         SEJA BEM-VINDO(A) AO BERE\n");
-    printf("         ESCOLHA UMA OPCAO ABAIXO");
-    printf("\n========================================\n");
+    int escolha;
+    do {
+        printf("\n========================================\n");
+        printf("         SEJA BEM-VINDO(A) AO BERE\n");
+        printf("         ESCOLHA UMA OPCAO ABAIXO\n");
+        printf("========================================\n");
 
-    for (int i = 0; i < 6; i++) {
-        printf(" %d - %s\n", principal[i].id, principal[i].nome);
-        if (i < 5) {
-            printf("----------------------------------------\n");
+        for (int i = 0; i < 6; i++) {
+            printf(" %d - %s\n", principal[i].id, principal[i].nome);
+            if (i < 5) {
+                printf("----------------------------------------\n");
+            }
         }
-    }
 
-    printf("========================================\n");
+        printf("========================================\n");
 
-    int escolha = opcaoEscolhida();
-    opcoes(escolha);
+        escolha = opcaoEscolhida();
+
+        if (escolha < 1 || escolha > 6) {
+            clear();
+            printf("\nOpcao invalida! Por favor, escolha uma opcao valida.\n");
+        } else {
+            opcoes(escolha);
+        }
+
+    } while (escolha != 6);
 }
 
-int opcaoEscolhida(){
+// Função para capturar a opção escolhida pelo usuário
+int opcaoEscolhida() {
     int opcao;
 
     printf("\nDigite a opcao desejada: ");
@@ -128,40 +140,37 @@ int opcaoEscolhida(){
     return opcao;
 }
 
-void opcoes(int opcao){
-    do
-    {
-        switch (opcao) {
-            case 1:
-                cadastro();
-                break;
-            case 2:
-                menuVendas();
-                break;
-            case 3:
-                aberturaCaixa();
-                break;
-            case 4:
-                fechaCaixa();
-                break;
-            case 5:
-                relatorios();
-                break;
-            case 6:
-                sair();
-                break;
-            default:
-                printf("\nOpcao desejada nao existe!\n");
-                break;
-        }
-
-        scanf("%d", &opcao); // Guarda a opcao escolhida pelo usuário
-
-    } while (opcao != 6);
+// Função para processar as opções do menu principal
+void opcoes(int opcao) {
+    switch (opcao) {
+        case 1:
+            cadastro();
+            break;
+        case 2:
+            menuVendas();
+            break;
+        case 3:
+            aberturaCaixa();
+            break;
+        case 4:
+            fechaCaixa();
+            break;
+        case 5:
+            relatorios();
+            break;
+        case 6:
+            sair();
+            break;
+        default:
+            printf("\nOpcao desejada nao existe!\n");
+            break;
+    }
 }
 
 void cadastro(){
     clear();
+
+    permisaoCaixa();
 
     Menu cadastro[] = {
         {1, "Cadastro de Usuarios"},
@@ -218,27 +227,47 @@ void opcaoCadastro(int opcao){
     }
 }
 
-void cadastroUsuario(){
+// Função auxiliar para liberar memória
+void liberarMemoriaUsuario (Usuario *usuario){
+    // Liberar a memória alocada
+    free(usuario->login);
+    free(usuario->password);
+    free(usuario);
+}
+
+void cadastroUsuario() {
     FILE *file;
-    Usuario usuario;
+    Usuario *usuario = (Usuario *)malloc(sizeof(Usuario));
     int controlador = 0;
+
+    // Alocar memória para login e password
+    usuario->login = (char *)malloc(TAMANHO_MAXIMO_USUARIO * sizeof(char));
+    usuario->password = (char *)malloc(TAMANHO_MAXIMO_SENHA * sizeof(char));
+
+    if (usuario == NULL || usuario->login == NULL || usuario->password == NULL) {
+        printf("Erro de alocação de memória.\n");
+        return;
+    }
 
     // Abrir o arquivo em modo append para adicionar usuários ao final do arquivo
     file = fopen("usuarios.txt", "a");
     if (file == NULL) {
         printf("Erro ao abrir o arquivo de usuários.\n");
+        free(usuario->login);
+        free(usuario->password);
+        free(usuario);
         return;
     }
 
     // Coletar dados do usuário com tratamento de tamanho para o login
     while (!controlador) {
         printf("\nDigite o login do usuario (min %d caracteres e max %d caracteres): ", TAMANHO_MINIMO_USUARIO, TAMANHO_MAXIMO_USUARIO);
-        scanf(" %[^\n]", usuario.login);
+        scanf(" %[^\n]", usuario->login);
 
         // Remover o newline do final da string, se houver
-        usuario.login[strcspn(usuario.login, "\n")] = '\0';
+        usuario->login[strcspn(usuario->login, "\n")] = '\0';
 
-        if (strlen(usuario.login) >= TAMANHO_MINIMO_USUARIO && strlen(usuario.login) <= TAMANHO_MAXIMO_USUARIO) {
+        if (strlen(usuario->login) >= TAMANHO_MINIMO_USUARIO && strlen(usuario->login) <= TAMANHO_MAXIMO_USUARIO) {
             controlador = 1;
         } else {
             printf("Login invalido. O login deve ter entre %d e %d caracteres.\n", TAMANHO_MINIMO_USUARIO, TAMANHO_MAXIMO_USUARIO);
@@ -249,12 +278,12 @@ void cadastroUsuario(){
     controlador = 0;
     while (!controlador) {
         printf("Digite a senha do usuario (min %d caracteres e max %d caracteres): ", TAMANHO_MINIMO_SENHA, TAMANHO_MAXIMO_SENHA);
-        scanf(" %[^\n]", usuario.password);
+        scanf(" %[^\n]", usuario->password);
 
         // Remover o newline do final da string, se houver
-        usuario.password[strcspn(usuario.password, "\n")] = '\0';
+        usuario->password[strcspn(usuario->password, "\n")] = '\0';
 
-        if (strlen(usuario.password) >= TAMANHO_MINIMO_SENHA && strlen(usuario.password) <= TAMANHO_MAXIMO_SENHA) {
+        if (strlen(usuario->password) >= TAMANHO_MINIMO_SENHA && strlen(usuario->password) <= TAMANHO_MAXIMO_SENHA) {
             controlador = 1;
         } else {
             printf("\nSenha invalida. Deve ter entre %d e %d caracteres.\n", TAMANHO_MINIMO_SENHA, TAMANHO_MAXIMO_SENHA);
@@ -263,150 +292,220 @@ void cadastroUsuario(){
 
     // Coletar o tipo de usuário
     printf("Digite o tipo de usuario (1 para Administrador, 2 para Usuario): ");
-    scanf("%d", &usuario.type);
+    scanf("%d", &usuario->type);
 
     // Limpar o buffer de entrada
     while (getchar() != '\n'); // Limpar o buffer de entrada
 
     // Escrever os dados do usuário no arquivo
-    fprintf(file, "%s %s %d\n", usuario.login, usuario.password, usuario.type);
+    fprintf(file, "%s %s %d\n", usuario->login, usuario->password, usuario->type);
 
     // Fechar o arquivo
     fclose(file);
+
+    // Liberar a memória alocada
+    liberarMemoriaUsuario(usuario);
 
     printf("Usuario cadastrado com sucesso!\n");
 
     system("pause");
 
+    // Chama a próxima função desejada
     cadastro();
 }
 
-void cadastroCliente(){
+// Função auxiliar para liberar memória
+void liberarMemoriaCliente(Clientes *cliente) {
+    free(cliente->nome);
+    free(cliente->nomeSocial);
+    free(cliente->cpf);
+    free(cliente->rua);
+    free(cliente->celular);
+    free(cliente->data);
+    free(cliente); // Libera a estrutura em si
+}
+
+void cadastroCliente() {
     FILE *arquivo;
-    Clientes cliente;
+    Clientes *cliente = (Clientes *)malloc(sizeof(Clientes)); // Aloca memória para a estrutura
+    size_t len = 0;
+
+    // Verifica se a alocação da estrutura foi bem-sucedida
+    if (cliente == NULL) {
+        printf("Erro de alocação de memória para a estrutura cliente.\n");
+        return;
+    }
+
+    // Inicializa ponteiros da estrutura com NULL
+    cliente->nome = NULL;
+    cliente->nomeSocial = NULL;
+    cliente->cpf = NULL;
+    cliente->rua = NULL;
+    cliente->celular = NULL;
+    cliente->data = NULL;
 
     // Abrindo o arquivo no modo "a" (anexar)
     arquivo = fopen("clientes.txt", "a");
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo de clientes.\n");
+        liberarMemoriaCliente(cliente);
         return;
     }
 
     // Obtendo dados do cliente
     printf("Informe o ID do cliente: ");
-    scanf("%d", &cliente.id);
+    scanf("%d", &cliente->id);
+    getchar(); // Limpar o buffer de entrada
 
     printf("Informe o nome do cliente: ");
-    scanf(" %[^\n]", cliente.nome); // Ignora espaços em branco antes do nome
+    getline(&cliente->nome, &len, stdin);
+    cliente->nome[strcspn(cliente->nome, "\n")] = '\0'; // Remover o newline do final da string
 
     printf("Informe o nome social do cliente: ");
-    scanf(" %[^\n]", cliente.nomeSocial); // Ignora espaços em branco antes do nome social
+    getline(&cliente->nomeSocial, &len, stdin);
+    cliente->nomeSocial[strcspn(cliente->nomeSocial, "\n")] = '\0';
 
     printf("Informe o CPF do cliente: ");
-    scanf(" %[^\n]", cliente.cpf);
+    getline(&cliente->cpf, &len, stdin);
+    cliente->cpf[strcspn(cliente->cpf, "\n")] = '\0';
 
-    printf("Informe a rua do cliente: ");
-    scanf(" %[^\n]", cliente.rua);
-
-    printf("Informe o numero da casa do cliente: ");
-    scanf("%d", &cliente.numero);
-
-    printf("Informe o celular do cliente: ");
-    scanf(" %[^\n]", cliente.celular);
-
-    // Validações básicas (deixe-as mais robustas de acordo com a necessidade)
-    if (strlen(cliente.nome) == 0) {
-        printf("Erro: Nome não pode ser vazio.\n");
+    if (strlen(cliente->cpf) != 11) { // Validação do tamanho do CPF
+        printf("Erro: CPF deve ter 11 dígitos.\n");
+        liberarMemoriaCliente(cliente);
+        fclose(arquivo);
         return;
     }
 
-    if (strlen(cliente.cpf) < 11) {
-        printf("Erro: CPF inválido.\n");
+    printf("Informe a rua do cliente: ");
+    getline(&cliente->rua, &len, stdin);
+    cliente->rua[strcspn(cliente->rua, "\n")] = '\0';
+
+    printf("Informe o número da casa do cliente: ");
+    scanf("%d", &cliente->numero);
+    getchar(); // Limpar o buffer de entrada
+
+    printf("Informe o celular do cliente: ");
+    getline(&cliente->celular, &len, stdin);
+    cliente->celular[strcspn(cliente->celular, "\n")] = '\0';
+
+    if (strlen(cliente->celular) != 11) { // Valida o tamanho do Celular
+        printf("Erro: Celular deve ter 11 dígitos.\n");
+        liberarMemoriaCliente(cliente);
+        fclose(arquivo);
+        return;
+    }
+
+    printf("Informe a data de nascimento do cliente (dd/mm/aaaa): ");
+    getline(&cliente->data, &len, stdin);
+    cliente->data[strcspn(cliente->data, "\n")] = '\0';
+
+    if (strlen(cliente->data) != 10) { //Valida a data informada
+        printf("Erro: Data deve estar no formato dd/mm/aaaa.\n");
+        liberarMemoriaCliente(cliente);
+        fclose(arquivo);
         return;
     }
 
     // Escrevendo os dados do cliente no arquivo
-    fprintf(arquivo, "%d %s %s %s %s %d %s\n", cliente.id, cliente.nome, cliente.nomeSocial, cliente.cpf, cliente.rua, cliente.numero, cliente.celular);
+    fprintf(arquivo, "%d %s %s %s %s %d %s %s\n", cliente->id, cliente->nome, cliente->nomeSocial, cliente->cpf, cliente->rua, cliente->numero, cliente->celular, cliente->data);
 
     // Fechando o arquivo
     fclose(arquivo);
 
+    // Liberando a memória alocada
+    liberarMemoriaCliente(cliente);
+
     printf("Cliente cadastrado com sucesso!\n");
+
     system("pause");
 
     cadastro();
 }
 
-void cadastroProduto(){
+// Função auxiliar para liberar memória
+void liberarMemoriaProduto(Produtos *produto){
+    free(produto);
+}
+
+void cadastroProduto() {
     FILE *arquivo;
-    Produtos produto;
+    Produtos *produto = (Produtos *)malloc(sizeof(Produtos)); // Aloca memória para a estrutura
+
+    if (produto == NULL) {
+        printf("Erro de alocação de memória para a estrutura de produto.\n");
+        return;
+    }
 
     // Abrindo o arquivo no modo "a" (anexar)
     arquivo = fopen("produtos.txt", "a");
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo de produtos.\n");
+        free(produto); // Libera a memória alocada para a estrutura de produtos
+        return;
+    }
+
+    // Alocando memória para descricao e categoria
+    produto->descricao = (char *)malloc(100 * sizeof(char));
+    produto->categoria = (char *)malloc(50 * sizeof(char));
+
+    if (produto->descricao == NULL || produto->categoria == NULL) {
+        printf("Erro de alocação de memória para descricao ou categoria.\n");
+        fclose(arquivo);
+        liberarMemoriaProduto(produto);
         return;
     }
 
     // Obtendo dados do produto do usuário
     printf("Informe o codigo do produto: ");
-    scanf("%d", &produto.codigo);
+    scanf("%d", &produto->codigo);
 
     printf("Informe a descricao do produto: ");
-    scanf(" %[^\n]", produto.descricao); // Ignora espaços em branco antes da descrição
+    fgets(produto->descricao, 100, stdin);
+
+    // Validações básicas
+    if (strlen(produto->descricao) == 0) {
+        printf("Erro: Descrição não pode ser vazia.\n");
+        fclose(arquivo);
+        liberarMemoriaProduto(produto);
+        return;
+    }
 
     printf("Informe a categoria do produto (Alimento, Material de Limpeza, Panificacao): ");
-    scanf(" %[^\n]", produto.categoria); // Ignora espaços em branco antes da descrição
+    fgets(produto->categoria, 50, stdin);
 
     printf("Informe o preco de compra do produto: ");
-    scanf("%f", &produto.precoCompra);
+    scanf("%f", &produto->precoCompra);
+
+    if (produto->precoCompra <= 0.0f) {
+        printf("Erro: Preco de compra deve ser maior que zero.\n");
+        fclose(arquivo);
+        liberarMemoriaProduto(produto);
+        return;
+    }
 
     printf("Informe a margem de lucro (em porcentagem): ");
-    scanf("%f", &produto.margemLucro);
+    scanf("%f", &produto->margemLucro);
 
     printf("Informe a quantidade em estoque: ");
-    scanf("%d", &produto.quantidadeEstoque);
+    scanf("%d", &produto->quantidadeEstoque);
 
     printf("Informe a quantidade de estoque minimo: ");
-    scanf("%d", &produto.estoqueMinimo);
-
-    // Validações básicas (deixe-as mais robustas de acordo com a necessidade)
-    if (strlen(produto.descricao) == 0) {
-        printf("Erro: Descrição não pode ser vazia.\n");
-        return;
-    }
-
-    if (strcmp(produto.categoria, "Alimento") != 0 &&
-        strcmp(produto.categoria, "Material de Limpeza") != 0 &&
-        strcmp(produto.categoria, "Panificacao") != 0) {
-        printf("Erro: Categoria invalida. As categorias validas sao: Alimento, Material de Limpeza, Panificacao.\n");
-        return;
-    }
-
-    if (produto.precoCompra <= 0.0f) {
-        printf("Erro: Preco de compra deve ser maior que zero.\n");
-        return;
-    }
-
-    if (produto.margemLucro <= 0.0f) {
-        printf("Erro: Margem de lucro deve ser maior que zero.\n");
-        return;
-    }
+    scanf("%d", &produto->estoqueMinimo);
 
     // Calculando o preço de venda com base na margem de lucro
-    produto.precoVenda = produto.precoCompra * (1.0f + produto.margemLucro / 100.0f);
+    produto->precoVenda = produto->precoCompra * (1.0f + produto->margemLucro / 100.0f);
 
     // Escrevendo os dados do produto no arquivo
-    fprintf(arquivo, "%d %s %s %f %f %f %d %d\n", produto.codigo, produto.descricao, produto.categoria, 
-            produto.precoCompra, produto.margemLucro, produto.precoVenda, produto.quantidadeEstoque, produto.estoqueMinimo);
+    fprintf(arquivo, "%d %s %s %.2f %.2f %.2f %d %d\n", produto->codigo, produto->descricao, produto->categoria, 
+            produto->precoCompra, produto->margemLucro, produto->precoVenda, produto->quantidadeEstoque, produto->estoqueMinimo);
 
     // Fechando o arquivo
     fclose(arquivo);
 
-    printf("Produto cadastrado com sucesso!\n");
-    system("pause");
+    // Liberando memória alocada
+    liberarMemoriaProduto(produto);
 
-    cadastro();
+    printf("Produto cadastrado com sucesso!\n");
 }
 
 void cadastroCategoria(){
@@ -445,6 +544,9 @@ void cadastroCategoria(){
 
 void menuVendas(){
     clear();
+
+    permisaoCaixa();
+
     Menu vendas[] = {
         {1, "Nova venda"},
         {2, "Retirada de Caixa (Sangria)"},
@@ -622,7 +724,7 @@ void documentoVenda(Carrinho carrinho[], int numItensCarrinho){
         return;
     }
 
-    fprintf(file, "***** Documento de Venda *****\n\n");
+    fprintf(file, "** Documento de Venda **\n\n");
     fprintf(file, "Produtos Comprados:\n");
     for (int i = 0; i < numItensCarrinho; i++) {
         fprintf(file, "Codigo: %d\n", carrinho[i].codigo);
@@ -690,7 +792,9 @@ void aberturaCaixa(){
     }
 }
 
+
 void fechaCaixa(){
+    
     relatorios();
 
     printf("\nCaixa Fechado com sucesso");
@@ -699,7 +803,27 @@ void fechaCaixa(){
     menuPrincipal();
 }
 
+void permisaoCaixa(){
+    char escolha;
+
+    if (statusCaixa == 0) {
+        printf("O caixa nao esta aberto. Gostaria de abrir? (s ou n) ");
+        scanf(" %c", &escolha); // Note o espaço antes de %c para ignorar espaços em branco e novas linhas
+
+        if (escolha == 's' || escolha == 'S') {
+            aberturaCaixa();
+        } else {
+            // Código para não abrir o caixa
+            printf("Operação cancelada. O caixa continua fechado.\n");
+            menuPrincipal();
+        }
+    }
+}
+
 void relatorios() {
+    
+    void permisaoCaixa();
+    
     printf("\nRelatório de Vendas");
     system("pause");
 
@@ -724,8 +848,6 @@ void clear() {
     #endif
 }
 
-int main() {
+void main() {
     menuPrincipal();
-
-    return 0;
 }
