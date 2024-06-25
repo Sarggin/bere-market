@@ -63,6 +63,11 @@ typedef struct {
     float total;
 } Carrinho;
 
+typedef struct {
+    int id;
+    char *nome;
+} Relatorios;
+
 // Declarando as funções que vamos usar no código
 void menuPrincipal();
 int opcaoEscolhida();
@@ -85,10 +90,17 @@ void aberturaCaixa();
 void permisaoCaixa();
 void fechaCaixa();
 void resetVariavelGlobal();
-void relatorios();
+void relatorios(int escolha);
 void sair();
 void clear();
 void dataAtual();
+
+void opcoesRelatorio(int escolha);
+void relatorioClientes();
+void relatorioProdutos();
+void relatorioVendas();
+void listagemClientesAlfabetica();
+void listagemClientesPeriodo();
 
 void menuPrincipal() {
     clear();
@@ -156,7 +168,7 @@ void opcoes(int opcao) {
             fechaCaixa();
             break;
         case 5:
-            relatorios();
+            relatorios(opcao);
             break;
         case 6:
             sair();
@@ -717,7 +729,7 @@ int produtosBereFixo(Produtos listaProdutos[], int indice) {
 
 void documentoVenda(Carrinho carrinho[], int numItensCarrinho){
     FILE *file;
-    file = fopen("venda.txt", "a"); // Abrir arquivo para escrita
+    file = fopen("vendas.txt", "a"); // Abrir arquivo para escrita
 
     if (file == NULL) {
         printf("Erro ao abrir o arquivo.");
@@ -766,6 +778,7 @@ void pagamento(){
 
 void aberturaCaixa(){
     clear();
+
     if (statusCaixa == 1)
     {
         printf("\nO caixa ja esta aberto, pode seguir trabalhando normalmente.\n");
@@ -795,8 +808,6 @@ void aberturaCaixa(){
 
 void fechaCaixa(){
     
-    relatorios();
-
     printf("\nCaixa Fechado com sucesso");
     system("pause");
 
@@ -820,14 +831,71 @@ void permisaoCaixa(){
     }
 }
 
-void relatorios() {
-    
-    void permisaoCaixa();
-    
-    printf("\nRelatório de Vendas");
-    system("pause");
+void relatorios(int escolha) {
+    Relatorios relatorioMenu[] = {
+        {1, "Listagem dos Clientes"},
+        {2, "Listagem dos Produtos"},
+        {3, "Listagem das Vendas"},
+        {4, "Retornar ao Menu Principal"},
+    };
 
-    menuPrincipal();
+    printf("\nRelatorios\n");
+    printf("\nSelecione uma das opcoes abaixo:\n\n");
+
+    for (int i = 0; i < 4; i++){
+        printf("%d - %s\n", relatorioMenu[i].id, relatorioMenu[i].nome);
+    }
+
+    escolha = opcaoEscolhida();
+
+    if (escolha != 0) {
+        opcoesRelatorio(escolha);
+    } else {
+        printf("\nValor inválido ou não encontrado\n");
+    }
+}
+
+void opcoesRelatorio(int escolha){
+    switch (escolha){
+        case 1:
+            relatorioClientes(escolha);
+            break;
+        case 2:
+            relatorioProdutos();
+            break;
+        case 3:
+            relatorioVendas();
+            break;
+        case 4:
+            menuPrincipal();
+            break;
+        default:
+            printf("\nValor inválido ou não encontrado\n");
+            break;
+    }
+}
+
+void relatorioClientes(int escolha) {
+
+    Relatorios relatorioClientes[] = {
+        {1, "Listagem de Clientes (ordenada em ordem alfabetica por nome)"},
+        {2, "Listagem dos Clientes que Compraram (em um determinado período)"},
+    };
+
+    printf("\nRelatorios de Clientes\n");
+    printf("\nSelecione uma das opcoes abaixo:\n\n");
+
+    for (int i = 0; i < 2; i++){
+        printf("%d - %s\n", relatorioClientes[i].id, relatorioClientes[i].nome);
+    }
+
+    escolha = opcaoEscolhida();
+    
+    if (escolha == 1) {
+        listagemClientesAlfabetica();
+    } else if (escolha == 2) {
+        listagemClientesPeriodo();
+    }
 }
 
 void resetVariavelGlobal(){
