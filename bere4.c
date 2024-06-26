@@ -912,19 +912,47 @@ void opcoesRelatorio(int opcao){
 }
 
 void relatorioClientes(){
-    
+    clear();
+    int opcao = 0;
 
+    Relatorios clientes[] = {
+        {1,"Listagem de Clientes (ordenada em ordem alfabetica por nome)"},
+        {2,"Listagem dos Clientes que Compraram (em um determinado periodo)"},
+        {3,"Voltar ao menu"},
+    };
+
+    printf("\nRelatorio de Clientes\n");
+    for (size_t i = 0; i < 3; i++){
+        printf("%d - %s\n", clientes[i].id, clientes[i].nome);
+    }
+
+    printf("\nDigite a opcao desejada: ");
+    scanf("%d", &opcao);
 }
 
 void relatorioProdutos(){
-    
-    
+    clear();
+    int opcao = 0;
 
+    Relatorios produtos[] = {
+        {1,"Listagem de Produtos (ordenada em ordem alfabetica por descricao)"},
+        {2,"Listagem de Produtos com Estoque zero ou Mínimo(ordenada em ordem alfabetica por descricao)"},
+        {3,"Listagem dos Produtos mais Vendidos (em um determinado período)"},
+        {4,"Voltar ao menu"}
+    };
+
+    printf("\nRelatorio de Produtos\n");
+    for (size_t i = 0; i < 4; i++){
+        printf("%d - %s\n", produtos[i].id, produtos[i].nome);
+    }
+
+    printf("\nDigite a opcao desejada: ");
+    scanf("%d", &opcao);
 }
 
 void relatorioVendas() {
     clear();
-    int opcao;
+    int opcao = 0;
 
     Relatorios vendas[] = {
         {1, "Listagem das Vendas (em um determinado periodo)"},
