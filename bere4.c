@@ -68,6 +68,12 @@ typedef struct {
     char *nome;
 } Relatorios;
 
+typedef struct {
+    int dia;
+    int mes;
+    int ano;
+} Data;
+
 // Declarando as funções que vamos usar no código
 void menuPrincipal();
 int opcaoEscolhida();
@@ -90,17 +96,18 @@ void aberturaCaixa();
 void permisaoCaixa();
 void fechaCaixa();
 void resetVariavelGlobal();
-void relatorios(int escolha);
+void relatorios();
 void sair();
 void clear();
-void dataAtual();
+Data dataAtual();
 
-void opcoesRelatorio(int escolha);
+void opcoesRelatorio(int opcao);
 void relatorioClientes();
 void relatorioProdutos();
 void relatorioVendas();
 void listagemClientesAlfabetica();
 void listagemClientesPeriodo();
+Relatorios* buscarRelatorio(Relatorios relatorios[], int tamanho, int opcao);
 
 void menuPrincipal() {
     clear();
@@ -168,7 +175,7 @@ void opcoes(int opcao) {
             fechaCaixa();
             break;
         case 5:
-            relatorios(opcao);
+            relatorios();
             break;
         case 6:
             sair();
@@ -750,11 +757,17 @@ void documentoVenda(Carrinho carrinho[], int numItensCarrinho){
     printf("Documento de venda gerado com sucesso.\n");
 }
 
-void dataAtual(){
+Data dataAtual() {
     time_t mytime;
     mytime = time(NULL);
     struct tm tm = *localtime(&mytime);
-    printf("Data da Compra: %d/%d/%d\n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+    
+    Data data;
+    data.dia = tm.tm_mday;
+    data.mes = tm.tm_mon + 1;
+    data.ano = tm.tm_year + 1900;
+
+    return data;
 }
 
 void carrinho(Carrinho carrinho[], int numItens){
@@ -805,7 +818,6 @@ void aberturaCaixa(){
     }
 }
 
-
 void fechaCaixa(){
     
     printf("\nCaixa Fechado com sucesso");
@@ -831,7 +843,10 @@ void permisaoCaixa(){
     }
 }
 
-void relatorios(int escolha) {
+void relatorios() {
+    clear();
+    int opcao;
+
     Relatorios relatorioMenu[] = {
         {1, "Listagem dos Clientes"},
         {2, "Listagem dos Produtos"},
@@ -846,57 +861,119 @@ void relatorios(int escolha) {
         printf("%d - %s\n", relatorioMenu[i].id, relatorioMenu[i].nome);
     }
 
-    escolha = opcaoEscolhida();
+    printf("\nDigite a opcao desejada: ");
+    scanf("%d", &opcao);
 
-    if (escolha != 0) {
-        opcoesRelatorio(escolha);
+    // Busca a opção selecionada
+    Relatorios* relatorioSelecionado = buscarRelatorio(relatorioMenu, 4, opcao);
+    if (relatorioSelecionado != NULL) {
+        printf("\nVocê selecionou: %s\n", relatorioSelecionado->nome);
+        opcoesRelatorio(opcao);
     } else {
-        printf("\nValor inválido ou não encontrado\n");
+        printf("\nOpcao invalida, digite novamente.\n");
+        relatorios();
     }
 }
 
-void opcoesRelatorio(int escolha){
-    switch (escolha){
-        case 1:
-            relatorioClientes(escolha);
-            break;
-        case 2:
-            relatorioProdutos();
-            break;
-        case 3:
-            relatorioVendas();
-            break;
-        case 4:
-            menuPrincipal();
-            break;
-        default:
-            printf("\nValor inválido ou não encontrado\n");
-            break;
+// Função para buscar uma opção no array de Relatorios
+Relatorios* buscarRelatorio(Relatorios relatorios[], int tamanho, int opcao) {
+    for (int i = 0; i < tamanho; i++) {
+        if (relatorios[i].id == opcao) {
+            return &relatorios[i];
+        }
+    }
+    return NULL; // Retorna NULL se não encontrar a opção
+}
+
+void opcoesRelatorio(int opcao){
+    if (opcao < 1 || opcao > 4){
+        printf("\nOpcao invalida, digite novamente.\n");
+        relatorios();
+        return;
+    } 
+
+    switch (opcao) {
+    case 1:
+        relatorioClientes();
+        break;
+    case 2:
+        relatorioProdutos();
+        break;
+    case 3:
+        relatorioVendas();
+        break;
+    case 4:
+        menuPrincipal();
+        break;
+    default:
+        printf("\nOpcao invalida, digite novamente.\n");
+        break;
     }
 }
 
-void relatorioClientes(int escolha) {
+void relatorioClientes(){
+    
 
-    Relatorios relatorioClientes[] = {
-        {1, "Listagem de Clientes (ordenada em ordem alfabetica por nome)"},
-        {2, "Listagem dos Clientes que Compraram (em um determinado período)"},
+}
+
+void relatorioProdutos(){
+    
+    
+
+}
+
+void relatorioVendas() {
+    clear();
+    int opcao;
+
+    Relatorios vendas[] = {
+        {1, "Listagem das Vendas (em um determinado periodo)"},
+        {2, "Faturamento Consolidado - em um periodo"},
+        {3, "Voltar"}
     };
 
-    printf("\nRelatorios de Clientes\n");
-    printf("\nSelecione uma das opcoes abaixo:\n\n");
-
-    for (int i = 0; i < 2; i++){
-        printf("%d - %s\n", relatorioClientes[i].id, relatorioClientes[i].nome);
+    printf("\nRelatorio de Vendas\n");
+    for (size_t i = 0; i < 3; i++){
+        printf("%d - %s\n", vendas[i].id, vendas[i].nome);
     }
 
-    escolha = opcaoEscolhida();
-    
-    if (escolha == 1) {
-        listagemClientesAlfabetica();
-    } else if (escolha == 2) {
-        listagemClientesPeriodo();
+    printf("\nDigite a opcao desejada: ");
+    scanf("%d", &opcao);
+
+    Relatorios* vendaSelecionada = buscarRelatorio(vendas, 3, opcao);
+    if (vendaSelecionada != NULL) {
+        switch (opcao) {
+        case 1:
+            listagemClientesPeriodo();
+            break;
+        case 2:
+            listagemClientesAlfabetica();
+            break;
+        case 3:
+            return;
+        default:
+            printf("\nOpcao invalida, digite novamente\n");
+            relatorioVendas();
+            break;
+        }
+    } else {
+        printf("\nOpcao invalida, digite novamente\n");
+        relatorioVendas();
     }
 }
+
+void listagemClientesPeriodo(){
+    char periodo[10];
+
+    printf("\nDigite o periodo desejado no seguinte formato dd/mm/yyyy: ");
+    scanf(" %[^\n]", periodo);
+}
+
+void listagemClientesAlfabetica(){
+
+}
+
+
 
 void resetVariavelGlobal(){
     dinheiroCaixa= 0;
