@@ -16,6 +16,8 @@ float dinheiroCaixa;
 bool statusCaixa = 0;
 int numCaixa = 0;
 
+int numItensCarrinho;
+
 
 // Structs do sistema, Matrizes heterogêneas
 typedef struct {
@@ -52,12 +54,12 @@ typedef struct {
 } Produtos;
 
 typedef struct {
-  char nome[50];
+  char *nome;
 } Categorias;
 
 typedef struct {
     int codigo;
-    char descricao[50]; 
+    char *descricao; 
     float precoVenda;
     int quantidade;
     float total;
@@ -88,7 +90,7 @@ void menuVendas();
 void opcaoVendas(int opcao);
 void novaVenda();
 void documentoVenda(Carrinho *carrinho, int numItensCarrinho);
-int produtosBereFixo(Produtos *listaProdutos, int indice);
+int produtosFixos(Produtos *listaProdutos, int indice);
 void carrinho(Carrinho carrinho[], int numItens);
 void sangria();
 void pagamento();
@@ -108,6 +110,11 @@ void relatorioVendas();
 void listagemClientesAlfabetica();
 void listagemClientesPeriodo();
 Relatorios* buscarRelatorio(Relatorios relatorios[], int tamanho, int opcao);
+
+void realizarPagamentoDinheiro(float total);
+void realizarPagamentoCartao(float total);
+void realizarPagamentoMisto(float total);
+float calcularTotalCarrinho(Carrinho carrinho[], int numItens);
 
 void menuPrincipal() {
     clear();
@@ -623,18 +630,23 @@ void exibirCabecalho(){
     printf("-------------------------------------------------------------------\n");
 }
 
-// Função para exibir um produto
-void exibirProduto(Produtos p) {
-    printf("%-7d| %-18s| %-18s| R$ %-5.2f |  %-6d\n", p.codigo, p.descricao, p.categoria, p.precoVenda, p.quantidadeEstoque);
+void exibirProduto(Produtos produto) {
+    printf("%-8d | %-17s | %-17s | R$ %7.2f | %3d\n",
+           produto.codigo,
+           produto.descricao,
+           produto.categoria,
+           produto.precoVenda,
+           produto.quantidadeEstoque);
 }
 
 void rodape(){
     printf("-------------------------------------------------------------------\n");
 }
 
-int carregarProdutos(Produtos listaProdutos[], int maxProdutos) {
+int carregarProdutos(Produtos **listaProdutos, int *maxProdutos) {
     FILE *arquivo;
     int contador = 0;
+    int capacidade = *maxProdutos;
 
     // Abrindo o arquivo no modo leitura
     arquivo = fopen("produtos.txt", "r");
@@ -644,97 +656,150 @@ int carregarProdutos(Produtos listaProdutos[], int maxProdutos) {
     }
 
     // Lendo os produtos do arquivo e armazenando no array
-    while (fscanf(arquivo, "%d %s %s %f %f %f %d %d",
-                  &listaProdutos[contador].codigo,
-                  listaProdutos[contador].descricao,
-                  listaProdutos[contador].categoria,
-                  &listaProdutos[contador].precoCompra,
-                  &listaProdutos[contador].margemLucro,
-                  &listaProdutos[contador].precoVenda,
-                  &listaProdutos[contador].quantidadeEstoque,
-                  &listaProdutos[contador].estoqueMinimo) == 8) {
+    while (!feof(arquivo)) {
+        if (contador >= capacidade) {
+            capacidade *= 2;
+            *listaProdutos = realloc(*listaProdutos, capacidade * sizeof(Produtos));
+        }
+        Produtos *produto = &(*listaProdutos)[contador];
+        produto->descricao = (char *)malloc(100 * sizeof(char));
+        produto->categoria = (char *)malloc(50 * sizeof(char));
+        fscanf(arquivo, "%d %99s %49s %f %f %f %d %d",
+               &produto->codigo,
+               produto->descricao,
+               produto->categoria,
+               &produto->precoCompra,
+               &produto->margemLucro,
+               &produto->precoVenda,
+               &produto->quantidadeEstoque,
+               &produto->estoqueMinimo);
         contador++;
-        if (contador >= maxProdutos) break; // Evita overflow do array
     }
 
     // Fechando o arquivo
     fclose(arquivo);
 
+    *maxProdutos = capacidade;
     return contador; // Retorna o número de produtos carregados
 }
 
-// Função para processar uma nova venda
 void novaVenda() {
+    
     clear();
-    Produtos produtos[100]; // Array para armazenar os produtos carregados e dinâmicos
-    int numProdutos = carregarProdutos(produtos, 50); // Carrega os produtos do arquivo
-    numProdutos = produtosBereFixo(produtos, numProdutos); // Adiciona os produtos dinâmicos
+    int capacidadeProdutos = 50;
+    Produtos *produtos = (Produtos *)malloc(capacidadeProdutos * sizeof(Produtos));
+    if (produtos == NULL) {
+        printf("Erro ao alocar memória para produtos.\n");
+        return;
+    }
+
+    int numProdutos = carregarProdutos(&produtos, &capacidadeProdutos);
+    numProdutos = produtosFixos(produtos, numProdutos);
 
     int codigoCompra;
     int quantidade;
     char continuarCompra = 's';
 
-    // Exibindo cabeçalho e lista de produtos disponíveis
-    exibirCabecalho();
-    for (int i = 0; i < numProdutos; i++) {
-        exibirProduto(produtos[i]);
-    }
-    rodape();
-
-    int encontrado = 0;
-    // Simulando a escolha e compra de produtos
     while (continuarCompra == 's' || continuarCompra == 'S') {
+
+        clear();    
+        // Exibindo cabeçalho e lista de produtos disponíveis
+        exibirCabecalho();
+        for (int i = 0; i < numProdutos; i++) {
+            exibirProduto(produtos[i]);
+        }
+        rodape();
+
+        int encontrado = 0;
+        int capacidadeCarrinho = 10;
+        Carrinho *carrinho = (Carrinho *)malloc(capacidadeCarrinho * sizeof(Carrinho));
+        if (carrinho == NULL) {
+            printf("Erro ao alocar memória para carrinho.\n");
+            free(produtos);
+            return;
+        }
+        int numItensCarrinho = 0;
+
+    
         printf("\nCarrinho de Compras\n");
         printf("\nInforme o codigo do produto a ser comprado: ");
         scanf("%d", &codigoCompra);
 
+        encontrado = 0;
         for (int i = 0; i < numProdutos; i++) {
-            if (produtos[i].codigo == codigoCompra){
+            if (produtos[i].codigo == codigoCompra) {
                 encontrado = 1;
+                printf("\nInforme a quantidade: ");
+                scanf("%d", &quantidade);
+
+                if (produtos[i].quantidadeEstoque < quantidade) {
+                    printf("Quantidade em estoque insuficiente.\n");
+                    break;
+                }
+
+                carrinho[numItensCarrinho].codigo = produtos[i].codigo;
+                carrinho[numItensCarrinho].descricao = strdup(produtos[i].descricao);
+                carrinho[numItensCarrinho].precoVenda = produtos[i].precoVenda;
+                carrinho[numItensCarrinho].quantidade = quantidade;
+                carrinho[numItensCarrinho].total = produtos[i].precoVenda * quantidade;
+
+                produtos[i].quantidadeEstoque -= quantidade;
+                if (produtos[i].quantidadeEstoque <= produtos[i].estoqueMinimo) {
+                    printf("Estoque mínimo atingido. Deseja continuar a compra? (s/n): ");
+                    char resposta;
+                    scanf(" %c", &resposta);
+                    if (resposta != 's' && resposta != 'S') {
+                        continuarCompra = 'n';
+                        break;
+                    }
+                }
+
+                printf("\nProduto adicionado ao carrinho.\n");
+                printf("Descricao: %s\n", produtos[i].descricao);
+                printf("Preco Unitario: R$ %.2f\n", produtos[i].precoVenda);
+                printf("Quantidade: %d\n", quantidade);
+                printf("Total: R$ %.2f\n", produtos[i].precoVenda * quantidade);
+
+                numItensCarrinho++;
+                break;
             }
         }
 
         if (!encontrado) {
-            printf("\nProduto nao encontrado.\n");
+            printf("Produto não encontrado.\n");
             continue;
         }
 
-        printf("\nInforme a quantidade: ");
-        scanf("%d", &quantidade);
-
-        // Procurando o produto escolhido pelo código
-        for (int i = 0; i < numProdutos; i++) {
-            printf("\nProduto adicionado ao carrinho.\n");
-            printf("Descricao: %s\n", produtos[i].descricao);
-            printf("Preco Unitario: R$ %.2f\n", produtos[i].precoVenda);
-            printf("Quantidade: %d\n", quantidade);
-            printf("Total: R$ %.2f\n", produtos[i].precoVenda * quantidade);
-            break;
-        }
+        // Gerar documento de venda
+        documentoVenda(carrinho, numItensCarrinho);
 
         printf("\nNovo item no carrinho de compra (s/n): ");
         scanf(" %c", &continuarCompra);
     }
+
+    free(produtos);
+
+    printf("Venda concluída com sucesso!\n");
     menuVendas();
 }
 
 // Função para inicializar os produtos dinâmicos
-int produtosBereFixo(Produtos listaProdutos[], int indice) {
-    Produtos produtosDinamicos[] = {
+int produtosFixos(Produtos listaProdutos[], int indice) {
+    Produtos produtosFixos[] = {
         {1000, "Cafe", "Alimento", 0, 0, 7.70, 10, 0},
         {1001, "Esponja", "Material Limpeza", 0, 0, 2.99, 30, 0},
         {1002, "Biscoito doce", "Panificacao", 0, 0, 12.50, 5, 0}
     };
-    int numDinamicos = sizeof(produtosDinamicos) / sizeof(produtosDinamicos[0]);
+    int numDinamicos = sizeof(produtosFixos) / sizeof(produtosFixos[0]);
 
     for (int i = 0; i < numDinamicos; i++) {
-        listaProdutos[indice++] = produtosDinamicos[i];
+        listaProdutos[indice++] = produtosFixos[i];
     }
 
     return indice; // Retorna o novo índice após adicionar os produtos dinâmicos
 }
 
-void documentoVenda(Carrinho carrinho[], int numItensCarrinho){
+void documentoVenda(Carrinho *carrinho, int numItensCarrinho) {
     FILE *file;
     file = fopen("vendas.txt", "a"); // Abrir arquivo para escrita
 
@@ -743,7 +808,8 @@ void documentoVenda(Carrinho carrinho[], int numItensCarrinho){
         return;
     }
 
-    fprintf(file, "** Documento de Venda **\n\n");
+    Data data = dataAtual();
+    fprintf(file, "Data da Venda: %02d/%02d/%04d\n", data.dia, data.mes, data.ano);
     fprintf(file, "Produtos Comprados:\n");
     for (int i = 0; i < numItensCarrinho; i++) {
         fprintf(file, "Codigo: %d\n", carrinho[i].codigo);
@@ -754,7 +820,7 @@ void documentoVenda(Carrinho carrinho[], int numItensCarrinho){
     }
 
     fclose(file); // Fechar arquivo após escrita
-    printf("Documento de venda gerado com sucesso.\n");
+    printf("\nDocumento de venda gerado com sucesso.\n");
 }
 
 Data dataAtual() {
@@ -785,8 +851,104 @@ void sangria(){
 
 }
 
-void pagamento(){
-    
+void pagamento() {
+    clear();
+
+    int opcaoPagamento;
+    float totalCompra = calcularTotalCarrinho(carrinho, numItensCarrinho);
+    float desconto;
+
+    printf("Total da compra: R$ %.2f\n", totalCompra);
+
+    printf("Digite o percentual de desconto (0 a 100): ");
+    scanf("%f", &desconto);
+
+    desconto = (desconto / 100) * totalCompra;
+
+    float totalComDesconto = totalCompra - desconto;
+
+    printf("\nEscolha a forma de pagamento:\n");
+    printf("1 - Dinheiro\n");
+    printf("2 - Cartao\n");
+    printf("3 - Misto\n");
+    printf("Digite a opcao desejada: ");
+    scanf("%d", &opcaoPagamento);
+
+    switch (opcaoPagamento) {
+        case 1:
+            realizarPagamentoDinheiro(totalComDesconto);
+            break;
+        case 2:
+            realizarPagamentoCartao(totalComDesconto);
+            break;
+        case 3:
+            realizarPagamentoMisto(totalComDesconto);
+            break;
+        default:
+            printf("Opcao invalida! Retornando ao menu de vendas.\n");
+            menuVendas();
+            break;
+    }
+}
+
+float calcularTotalCarrinho(Carrinho carrinho[], int numItens) {
+    float total = 0.0;
+
+    for (int i = 0; i < numItens; i++) {
+        total += carrinho[i].total;
+    }
+
+    return total;
+}
+
+void realizarPagamentoDinheiro(float total) {
+    float valorPago, troco;
+
+    printf("Total a pagar: R$ %.2f\n", total);
+    printf("Digite o valor pago: R$ ");
+    scanf("%f", &valorPago);
+
+    while (valorPago < total) {
+        printf("Valor insuficiente! Digite um valor maior ou igual a R$ %.2f: R$ ", total);
+        scanf("%f", &valorPago);
+    }
+
+    troco = valorPago - total;
+    printf("Troco: R$ %.2f\n", troco);
+    system("pause");
+    menuVendas();
+}
+
+// Função para pagamento com cartão
+void realizarPagamentoCartao(float total) {
+    printf("Total a pagar: R$ %.2f\n", total);
+    printf("Pagamento realizado com sucesso!\n");
+    system("pause");
+    menuVendas();
+}
+
+// Função para pagamento misto
+void realizarPagamentoMisto(float total) {
+    float valorPagoDinheiro, valorPagoCartao, valorRestante;
+
+    printf("Total a pagar: R$ %.2f\n", total);
+    printf("Digite o valor pago em dinheiro: R$ ");
+    scanf("%f", &valorPagoDinheiro);
+
+    valorRestante = total - valorPagoDinheiro;
+
+    printf("Valor restante a pagar no cartao: R$ %.2f\n", valorRestante);
+    printf("Digite o valor pago no cartao: R$ ");
+    scanf("%f", &valorPagoCartao);
+
+    while (valorPagoCartao < valorRestante) {
+        printf("Valor insuficiente no cartao! Digite um valor maior ou igual a R$ %.2f: R$ ", valorRestante);
+        scanf("%f", &valorPagoCartao);
+    }
+
+    printf("Pagamento misto realizado com sucesso!\n");
+    system("pause");
+    menuVendas();
 }
 
 void aberturaCaixa(){
