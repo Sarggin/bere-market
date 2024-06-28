@@ -684,16 +684,15 @@ int carregarProdutos(Produtos **listaProdutos, int *maxProdutos) {
 }
 
 void novaVenda() {
-    
     clear();
-    int capacidadeProdutos = 50;
-    Produtos *produtos = (Produtos *)malloc(capacidadeProdutos * sizeof(Produtos));
+    int quantidadeProdutos = 2;
+    Produtos *produtos = (Produtos *)malloc(quantidadeProdutos * sizeof(Produtos));
     if (produtos == NULL) {
         printf("Erro ao alocar memória para produtos.\n");
         return;
     }
 
-    int numProdutos = carregarProdutos(&produtos, &capacidadeProdutos);
+    int numProdutos = carregarProdutos(&produtos, &quantidadeProdutos);
     numProdutos = produtosFixos(produtos, numProdutos);
 
     int codigoCompra;
@@ -711,15 +710,15 @@ void novaVenda() {
         rodape();
 
         int encontrado = 0;
-        int capacidadeCarrinho = 10;
-        Carrinho *carrinho = (Carrinho *)malloc(capacidadeCarrinho * sizeof(Carrinho));
+        
+        Carrinho *carrinho = (Carrinho *)malloc(quantidadeProdutos * sizeof(Carrinho));
+
         if (carrinho == NULL) {
             printf("Erro ao alocar memória para carrinho.\n");
             free(produtos);
             return;
         }
         int numItensCarrinho = 0;
-
     
         printf("\nCarrinho de Compras\n");
         printf("\nInforme o codigo do produto a ser comprado: ");

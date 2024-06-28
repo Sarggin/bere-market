@@ -30,3 +30,35 @@ Preco Unitario: 7.70
 Quantidade: 2
 Total: 15.40
 
+Data da Venda: 27/06/2024
+Produtos Comprados:
+Codigo: 1001
+Descricao: Esponja
+Preco Unitario: 2.99
+Quantidade: 2
+Total: 5.98
+
+Data da Venda: 27/06/2024
+Produtos Comprados:
+Codigo: 1000
+Descricao: Cafe
+Preco Unitario: 7.70
+Quantidade: 2
+Total: 15.40
+
+Data da Venda: 27/06/2024
+Produtos Comprados:
+Codigo: 1000
+Descricao: Cafe
+Preco Unitario: 7.70
+Quantidade: 3
+Total: 23.10
+
+Data da Venda: 27/06/2024
+Produtos Comprados:
+Codigo: 1002
+Descricao: Biscoito doce
+Preco Unitario: 12.50
+Quantidade: 3
+Total: 37.50
+
