@@ -1089,6 +1089,27 @@ void relatorioClientes(){
 
     printf("\nDigite a opcao desejada: ");
     scanf("%d", &opcao);
+
+    Relatorios* clienteSelecionado = buscarRelatorio(clientes, 3, opcao);
+    if (clienteSelecionado != NULL) {
+        switch (opcao) {
+        case 1:
+            listagemClientesAlfabetica();
+            break;
+        case 2:
+            listagemClientesPeriodo();
+            break;
+        case 3:
+            return;
+        default:
+            printf("\nOpcao invalida, digite novamente\n");
+            relatorioVendas();
+            break;
+        }
+    } else {
+        printf("\nOpcao invalida, digite novamente\n");
+        relatorioVendas();
+    }
 }
 
 void relatorioProdutos(){
@@ -1133,10 +1154,8 @@ void relatorioVendas() {
     if (vendaSelecionada != NULL) {
         switch (opcao) {
         case 1:
-            listagemClientesPeriodo();
             break;
         case 2:
-            listagemClientesAlfabetica();
             break;
         case 3:
             return;
@@ -1158,11 +1177,89 @@ void listagemClientesPeriodo(){
     scanf(" %[^\n]", periodo);
 }
 
-void listagemClientesAlfabetica(){
+void carregarClientes(Clientes **listaClientes, int *quantidadeClientes) {
+    FILE *arquivo;
+    char linha[256];
+    Clientes cliente;
+    *quantidadeClientes = 0;
 
+    // Abrindo o arquivo no modo leitura
+    arquivo = fopen("clientes.txt", "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo de clientes.\n");
+        return;
+    }
+
+    // Contar a quantidade de linhas no arquivo
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        (*quantidadeClientes)++;
+    }
+
+    // Alocar memória para a lista de clientes
+    *listaClientes = (Clientes *)malloc((*quantidadeClientes) * sizeof(Clientes));
+    if (*listaClientes == NULL) {
+        printf("Erro ao alocar memória.\n");
+        fclose(arquivo);
+        return;
+    }
+
+    // Voltar ao início do arquivo
+    rewind(arquivo);
+    int i = 0;
+
+    // Ler os clientes do arquivo e armazená-los na lista
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        sscanf(linha, "%d,%99[^,],%99[^,],%19[^,],%99[^,],%d,%19[^,],%19[^\n]",
+               &(*listaClientes)[i].id,
+               (*listaClientes)[i].nome,
+               (*listaClientes)[i].nomeSocial,
+               (*listaClientes)[i].cpf,
+               (*listaClientes)[i].rua,
+               &(*listaClientes)[i].numero,
+               (*listaClientes)[i].celular,
+               (*listaClientes)[i].data);
+        i++;
+    }
+
+    // Fechar o arquivo
+    fclose(arquivo);
 }
 
+int compararClientes(const void *a, const void *b) {
+    Clientes *clienteA = (Clientes *)a;
+    Clientes *clienteB = (Clientes *)b;
+    return strcmp(clienteA->nome, clienteB->nome);
+}
 
+void listagemClientesAlfabetica() {
+    Clientes *listaClientes;
+    int quantidadeClientes;
+
+    // Carregar clientes do arquivo
+    carregarClientes(&listaClientes, &quantidadeClientes);
+
+    if (quantidadeClientes == 0) {
+        printf("Nenhum cliente encontrado.\n");
+        return;
+    }
+
+    // Ordenar os clientes por nome em ordem alfabética
+    qsort(listaClientes, quantidadeClientes, sizeof(Clientes), compararClientes);
+
+    // Exibir os clientes ordenados
+    printf("%-6s | %-20s | %-20s | %-14s | %-20s | %-6s | %-14s | %-10s\n", 
+           "ID", "Nome", "Nome Social", "CPF", "Rua", "Número", "Celular", "Data");
+    printf("----------------------------------------------------------------------------------------------\n");
+    for (int i = 0; i < quantidadeClientes; i++) {
+        printf("%-6d | %-20s | %-20s | %-14s | %-20s | %-6d | %-14s | %-10s\n", 
+               listaClientes[i].id, listaClientes[i].nome, listaClientes[i].nomeSocial, 
+               listaClientes[i].cpf, listaClientes[i].rua, listaClientes[i].numero, 
+               listaClientes[i].celular, listaClientes[i].data);
+    }
+
+    // Liberar a memória alocada para a lista de clientes
+    free(listaClientes);
+}
 
 void resetVariavelGlobal(){
     dinheiroCaixa= 0;
