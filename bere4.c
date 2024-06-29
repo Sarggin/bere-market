@@ -30,6 +30,11 @@ typedef struct {
 } Usuario;
 
 typedef struct {
+    char tipo; // 'd' para dinheiro, 'c' para cartão, etc.
+    float valor;
+} Pagamento;
+
+typedef struct {
     int id;
     char *nome;
     char *nomeSocial;
@@ -915,8 +920,68 @@ void carrinho(Carrinho carrinho[], int numItens){
     }
 }
 
-void sangria(){
+// Função para calcular o total em dinheiro disponível no caixa
+float calcularTotalDinheiro(Pagamento pagamentos[], int numPagamentos) {
+    for (int i = 0; i < numPagamentos; i++) {
+        if (pagamentos[i].tipo == 'd' || pagamentos[i].tipo == 'md') {
+            dinheiroCaixa += pagamentos[i].valor;
+        }
+    }
+    return dinheiroCaixa;
+}
 
+void sangria(){
+ // Verificar se o usuário logado é do tipo 1 (ADMIN)
+    int tipoUsuario; // Exemplo: 1 para ADMIN
+    printf("\nQual seu tipo de usuario: ");
+    scanf("%d", &tipoUsuario);
+
+    if (tipoUsuario != 1) {
+        // Solicitar login e senha de administrador
+        printf("Para realizar a sangria, eh necessario autenticacao de administrador.\n");
+        // Aqui seria implementada a lógica de autenticação
+        return;
+    }
+
+    // Supondo uma estrutura de pagamentos
+
+    int tamanhoPagamento = sizeof(Pagamento);
+
+    Pagamento pagamentos[tamanhoPagamento]; // Ajuste o tamanho conforme necessário
+
+    int numPagamentos = 0; // Número de pagamentos registrados
+
+    // Exemplo de cálculo do total em dinheiro
+    float totalDinheiro = calcularTotalDinheiro(pagamentos, numPagamentos);
+
+    // Apresentar o total em dinheiro para a Dona Berê
+    printf("\nTotal em dinheiro no caixa: R$ %.2f\n", totalDinheiro);
+
+    // Solicitar o valor da retirada da sangria
+    float valorRetirada;
+    printf("\nInforme o valor da retirada (deve ser menor que o valor presente no caixa, deixando troco minimo de 50 reias): ");
+    scanf("%f", &valorRetirada);
+
+    // Validar se o valor da retirada é maior que o valor presente no caixa
+    if (valorRetirada >= totalDinheiro) {
+        printf("\nValor da retirada nao pode ser igual ou maior que o valor presente no caixa.\n");
+        return;
+    }
+
+    // Calcular o troco mínimo necessário (exemplo mínimo de R$ 50)
+    float trocoMinimo = 50.0;
+    float troco = valorRetirada - totalDinheiro;
+
+    if (troco >= trocoMinimo) {
+        printf("\nPara a retirada de %.2f, deve sobrar um troco minimo de R$ %.2f.\n", valorRetirada, trocoMinimo);
+        return;
+    }
+
+    // Atualizar o valor do caixa após a sangria
+    dinheiroCaixa -= valorRetirada;
+
+    // Mensagem de confirmação
+    printf("\nSangria de R$ %.2f realizada com sucesso. Troco disponivel: R$ %.2f\n", valorRetirada, dinheiroCaixa);
 }
 
 float carregaCarrinhoAtual(Carrinho carrinho[], float total) {
@@ -991,7 +1056,7 @@ void realizarPagamentoDinheiro(float total) {
     scanf("%f", &valorPago);
 
     while (valorPago < total) {
-        printf("Valor insuficiente! Digite um valor maior ou igual a R$ %.2f: R$ ", total);
+        printf("\nValor insuficiente! Digite um valor maior ou igual a R$ %.2f: R$ ", total);
         scanf("%f", &valorPago);
     }
 
@@ -1003,8 +1068,8 @@ void realizarPagamentoDinheiro(float total) {
 
 // Função para pagamento com cartão
 void realizarPagamentoCartao(float total) {
-    printf("Total a pagar: R$ %.2f\n", total);
-    printf("Pagamento realizado com sucesso!\n");
+    printf("\nTotal a pagar: R$ %.2f\n", total);
+    printf("\nPagamento realizado com sucesso!\n");
     system("pause");
     menuVendas();
 }
