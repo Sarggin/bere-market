@@ -102,7 +102,6 @@ void relatorios();
 void sair();
 void clear();
 Data dataAtual();
-
 void opcoesRelatorio(int opcao);
 void relatorioClientes();
 void relatorioProdutos();
@@ -110,7 +109,6 @@ void relatorioVendas();
 void listagemClientesAlfabetica();
 void listagemClientesPeriodo();
 Relatorios* buscarRelatorio(Relatorios relatorios[], int tamanho, int opcao);
-
 void realizarPagamentoDinheiro(float total);
 void realizarPagamentoCartao(float total);
 void realizarPagamentoMisto(float total);
@@ -753,6 +751,9 @@ void novaVenda() {
                     }
                 }
 
+                // Gerar documento de venda
+                documentoVenda(carrinho, numItensCarrinho);
+
                 printf("\nProduto adicionado ao carrinho.\n");
                 printf("Descricao: %s\n", produtos[i].descricao);
                 printf("Preco Unitario: R$ %.2f\n", produtos[i].precoVenda);
@@ -768,9 +769,6 @@ void novaVenda() {
             printf("Produto não encontrado.\n");
             continue;
         }
-
-        // Gerar documento de venda
-        documentoVenda(carrinho, numItensCarrinho);
 
         printf("\nNovo item no carrinho de compra (s/n): ");
         scanf(" %c", &continuarCompra);
@@ -1002,263 +1000,6 @@ void permisaoCaixa(){
             menuPrincipal();
         }
     }
-}
-
-void relatorios() {
-    clear();
-    int opcao;
-
-    Relatorios relatorioMenu[] = {
-        {1, "Listagem dos Clientes"},
-        {2, "Listagem dos Produtos"},
-        {3, "Listagem das Vendas"},
-        {4, "Retornar ao Menu Principal"},
-    };
-
-    printf("\nRelatorios\n");
-    printf("\nSelecione uma das opcoes abaixo:\n\n");
-
-    for (int i = 0; i < 4; i++){
-        printf("%d - %s\n", relatorioMenu[i].id, relatorioMenu[i].nome);
-    }
-
-    printf("\nDigite a opcao desejada: ");
-    scanf("%d", &opcao);
-
-    // Busca a opção selecionada
-    Relatorios* relatorioSelecionado = buscarRelatorio(relatorioMenu, 4, opcao);
-    if (relatorioSelecionado != NULL) {
-        printf("\nVocê selecionou: %s\n", relatorioSelecionado->nome);
-        opcoesRelatorio(opcao);
-    } else {
-        printf("\nOpcao invalida, digite novamente.\n");
-        relatorios();
-    }
-}
-
-// Função para buscar uma opção no array de Relatorios
-Relatorios* buscarRelatorio(Relatorios relatorios[], int tamanho, int opcao) {
-    for (int i = 0; i < tamanho; i++) {
-        if (relatorios[i].id == opcao) {
-            return &relatorios[i];
-        }
-    }
-    return NULL; // Retorna NULL se não encontrar a opção
-}
-
-void opcoesRelatorio(int opcao){
-    if (opcao < 1 || opcao > 4){
-        printf("\nOpcao invalida, digite novamente.\n");
-        relatorios();
-        return;
-    } 
-
-    switch (opcao) {
-    case 1:
-        relatorioClientes();
-        break;
-    case 2:
-        relatorioProdutos();
-        break;
-    case 3:
-        relatorioVendas();
-        break;
-    case 4:
-        menuPrincipal();
-        break;
-    default:
-        printf("\nOpcao invalida, digite novamente.\n");
-        break;
-    }
-}
-
-void relatorioClientes(){
-    clear();
-    int opcao = 0;
-
-    Relatorios clientes[] = {
-        {1,"Listagem de Clientes (ordenada em ordem alfabetica por nome)"},
-        {2,"Listagem dos Clientes que Compraram (em um determinado periodo)"},
-        {3,"Voltar ao menu"},
-    };
-
-    printf("\nRelatorio de Clientes\n");
-    for (size_t i = 0; i < 3; i++){
-        printf("%d - %s\n", clientes[i].id, clientes[i].nome);
-    }
-
-    printf("\nDigite a opcao desejada: ");
-    scanf("%d", &opcao);
-
-    Relatorios* clienteSelecionado = buscarRelatorio(clientes, 3, opcao);
-    if (clienteSelecionado != NULL) {
-        switch (opcao) {
-        case 1:
-            listagemClientesAlfabetica();
-            break;
-        case 2:
-            listagemClientesPeriodo();
-            break;
-        case 3:
-            return;
-        default:
-            printf("\nOpcao invalida, digite novamente\n");
-            relatorioVendas();
-            break;
-        }
-    } else {
-        printf("\nOpcao invalida, digite novamente\n");
-        relatorioVendas();
-    }
-}
-
-void relatorioProdutos(){
-    clear();
-    int opcao = 0;
-
-    Relatorios produtos[] = {
-        {1,"Listagem de Produtos (ordenada em ordem alfabetica por descricao)"},
-        {2,"Listagem de Produtos com Estoque zero ou Mínimo(ordenada em ordem alfabetica por descricao)"},
-        {3,"Listagem dos Produtos mais Vendidos (em um determinado período)"},
-        {4,"Voltar ao menu"}
-    };
-
-    printf("\nRelatorio de Produtos\n");
-    for (size_t i = 0; i < 4; i++){
-        printf("%d - %s\n", produtos[i].id, produtos[i].nome);
-    }
-
-    printf("\nDigite a opcao desejada: ");
-    scanf("%d", &opcao);
-}
-
-void relatorioVendas() {
-    clear();
-    int opcao = 0;
-
-    Relatorios vendas[] = {
-        {1, "Listagem das Vendas (em um determinado periodo)"},
-        {2, "Faturamento Consolidado - em um periodo"},
-        {3, "Voltar"}
-    };
-
-    printf("\nRelatorio de Vendas\n");
-    for (size_t i = 0; i < 3; i++){
-        printf("%d - %s\n", vendas[i].id, vendas[i].nome);
-    }
-
-    printf("\nDigite a opcao desejada: ");
-    scanf("%d", &opcao);
-
-    Relatorios* vendaSelecionada = buscarRelatorio(vendas, 3, opcao);
-    if (vendaSelecionada != NULL) {
-        switch (opcao) {
-        case 1:
-            break;
-        case 2:
-            break;
-        case 3:
-            return;
-        default:
-            printf("\nOpcao invalida, digite novamente\n");
-            relatorioVendas();
-            break;
-        }
-    } else {
-        printf("\nOpcao invalida, digite novamente\n");
-        relatorioVendas();
-    }
-}
-
-void listagemClientesPeriodo(){
-    char periodo[10];
-
-    printf("\nDigite o periodo desejado no seguinte formato dd/mm/yyyy: ");
-    scanf(" %[^\n]", periodo);
-}
-
-void carregarClientes(Clientes **listaClientes, int *quantidadeClientes) {
-    FILE *arquivo;
-    char linha[256];
-    Clientes cliente;
-    *quantidadeClientes = 0;
-
-    // Abrindo o arquivo no modo leitura
-    arquivo = fopen("clientes.txt", "r");
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo de clientes.\n");
-        return;
-    }
-
-    // Contar a quantidade de linhas no arquivo
-    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
-        (*quantidadeClientes)++;
-    }
-
-    // Alocar memória para a lista de clientes
-    *listaClientes = (Clientes *)malloc((*quantidadeClientes) * sizeof(Clientes));
-    if (*listaClientes == NULL) {
-        printf("Erro ao alocar memória.\n");
-        fclose(arquivo);
-        return;
-    }
-
-    // Voltar ao início do arquivo
-    rewind(arquivo);
-    int i = 0;
-
-    // Ler os clientes do arquivo e armazená-los na lista
-    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
-        sscanf(linha, "%d,%99[^,],%99[^,],%19[^,],%99[^,],%d,%19[^,],%19[^\n]",
-               &(*listaClientes)[i].id,
-               (*listaClientes)[i].nome,
-               (*listaClientes)[i].nomeSocial,
-               (*listaClientes)[i].cpf,
-               (*listaClientes)[i].rua,
-               &(*listaClientes)[i].numero,
-               (*listaClientes)[i].celular,
-               (*listaClientes)[i].data);
-        i++;
-    }
-
-    // Fechar o arquivo
-    fclose(arquivo);
-}
-
-int compararClientes(const void *a, const void *b) {
-    Clientes *clienteA = (Clientes *)a;
-    Clientes *clienteB = (Clientes *)b;
-    return strcmp(clienteA->nome, clienteB->nome);
-}
-
-void listagemClientesAlfabetica() {
-    Clientes *listaClientes;
-    int quantidadeClientes;
-
-    // Carregar clientes do arquivo
-    carregarClientes(&listaClientes, &quantidadeClientes);
-
-    if (quantidadeClientes == 0) {
-        printf("Nenhum cliente encontrado.\n");
-        return;
-    }
-
-    // Ordenar os clientes por nome em ordem alfabética
-    qsort(listaClientes, quantidadeClientes, sizeof(Clientes), compararClientes);
-
-    // Exibir os clientes ordenados
-    printf("%-6s | %-20s | %-20s | %-14s | %-20s | %-6s | %-14s | %-10s\n", 
-           "ID", "Nome", "Nome Social", "CPF", "Rua", "Número", "Celular", "Data");
-    printf("----------------------------------------------------------------------------------------------\n");
-    for (int i = 0; i < quantidadeClientes; i++) {
-        printf("%-6d | %-20s | %-20s | %-14s | %-20s | %-6d | %-14s | %-10s\n", 
-               listaClientes[i].id, listaClientes[i].nome, listaClientes[i].nomeSocial, 
-               listaClientes[i].cpf, listaClientes[i].rua, listaClientes[i].numero, 
-               listaClientes[i].celular, listaClientes[i].data);
-    }
-
-    // Liberar a memória alocada para a lista de clientes
-    free(listaClientes);
 }
 
 void resetVariavelGlobal(){

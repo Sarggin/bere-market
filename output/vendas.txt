@@ -62,3 +62,7 @@ Preco Unitario: 12.50
 Quantidade: 3
 Total: 37.50
 
+Data da Venda: 28/06/2024
+Produtos Comprados:
+Data da Venda: 28/06/2024
+Produtos Comprados:
