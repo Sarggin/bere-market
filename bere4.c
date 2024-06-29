@@ -76,6 +76,14 @@ typedef struct {
     int ano;
 } Data;
 
+typedef struct {
+    int codigo;
+    char *descricao;
+    float precoVenda;
+    int quantidade;
+    float total;
+} ItemCarrinho;
+
 // Declarando as funções que vamos usar no código
 void menuPrincipal();
 int opcaoEscolhida();
@@ -638,16 +646,48 @@ void rodape(){
     printf("-------------------------------------------------------------------\n");
 }
 
+// Função de comparação para qsort
+int comparaProdutos(const void *a, const void *b) {
+    Produtos *produtoA = (Produtos *)a;
+    Produtos *produtoB = (Produtos *)b;
+    return produtoA->codigo - produtoB->codigo;
+}
+
 int carregarProdutos(Produtos **listaProdutos, int *maxProdutos) {
     FILE *arquivo;
     int contador = 0;
     int capacidade = *maxProdutos;
 
+    // Produtos fixos
+    Produtos produtosFixos[] = {
+        {1000, "Cafe", "Alimento", 0, 0, 7.70, 10, 0},
+        {1001, "Esponja", "Material Limpeza", 0, 0, 2.99, 30, 0},
+        {1002, "Biscoito doce", "Panificacao", 0, 0, 12.50, 5, 0}
+    };
+
+    // Copiar produtos fixos para a lista dinâmica, se houver capacidade
+    for (int i = 0; i < sizeof(produtosFixos) / sizeof(produtosFixos[0]); ++i) {
+        if (contador >= capacidade) {
+            capacidade *= 2;
+            *listaProdutos = realloc(*listaProdutos, capacidade * sizeof(Produtos));
+        }
+        Produtos *produto = &(*listaProdutos)[contador];
+        produto->codigo = produtosFixos[i].codigo;
+        produto->descricao = strdup(produtosFixos[i].descricao);
+        produto->categoria = strdup(produtosFixos[i].categoria);
+        produto->precoCompra = produtosFixos[i].precoCompra;
+        produto->margemLucro = produtosFixos[i].margemLucro;
+        produto->precoVenda = produtosFixos[i].precoVenda;
+        produto->quantidadeEstoque = produtosFixos[i].quantidadeEstoque;
+        produto->estoqueMinimo = produtosFixos[i].estoqueMinimo;
+        contador++;
+    }
+
     // Abrindo o arquivo no modo leitura
     arquivo = fopen("produtos.txt", "r");
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo de produtos.\n");
-        return 0; // Retorna 0 indicando falha
+        return contador; // Retorna o número de produtos carregados
     }
 
     // Lendo os produtos do arquivo e armazenando no array
@@ -675,12 +715,16 @@ int carregarProdutos(Produtos **listaProdutos, int *maxProdutos) {
     fclose(arquivo);
 
     *maxProdutos = capacidade;
+
+    // Ordenando os produtos pelo código (ID) usando qsort
+    qsort(*listaProdutos, contador, sizeof(Produtos), comparaProdutos);
+
     return contador; // Retorna o número de produtos carregados
 }
 
 void novaVenda() {
     clear();
-    int quantidadeProdutos = 2;
+    int quantidadeProdutos = 3;
     Produtos *produtos = (Produtos *)malloc(quantidadeProdutos * sizeof(Produtos));
     if (produtos == NULL) {
         printf("Erro ao alocar memória para produtos.\n");
