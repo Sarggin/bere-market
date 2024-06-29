@@ -113,6 +113,10 @@ float calcularTotalCarrinho(Carrinho carrinho[], int numItens);
 void realizarPagamentoDinheiro(float total);
 void realizarPagamentoCartao(float total);
 void realizarPagamentoMisto(float total);
+void listaCliente();
+void clienteAlfabetica();
+void clientePeriodo();
+
 
 
 void menuPrincipal() {
@@ -265,22 +269,22 @@ void cadastroUsuario() {
     Usuario *usuario = (Usuario *)malloc(sizeof(Usuario));
     int controlador = 0;
 
+    // Abrir o arquivo em modo append para adicionar usuários ao final do arquivo
+    file = fopen("usuarios.txt", "w");
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo de usuários.\n");
+        free(usuario->login);
+        free(usuario->password);
+        free(usuario);
+        return;
+    }
+
     // Alocar memória para login e password
     usuario->login = (char *)malloc(TAMANHO_MAXIMO_USUARIO * sizeof(char));
     usuario->password = (char *)malloc(TAMANHO_MAXIMO_SENHA * sizeof(char));
 
     if (usuario == NULL || usuario->login == NULL || usuario->password == NULL) {
         printf("Erro de alocação de memória.\n");
-        return;
-    }
-
-    // Abrir o arquivo em modo append para adicionar usuários ao final do arquivo
-    file = fopen("usuarios.txt", "a");
-    if (file == NULL) {
-        printf("Erro ao abrir o arquivo de usuários.\n");
-        free(usuario->login);
-        free(usuario->password);
-        free(usuario);
         return;
     }
 
@@ -355,6 +359,14 @@ void cadastroCliente() {
     Clientes *cliente = (Clientes *)malloc(sizeof(Clientes)); // Aloca memória para a estrutura
     size_t len = 0;
 
+    // Abrindo o arquivo no modo "a" (anexar)
+    arquivo = fopen("clientes.txt", "a");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo de clientes.\n");
+        liberarMemoriaCliente(cliente);
+        return;
+    }
+
     // Verifica se a alocação da estrutura foi bem-sucedida
     if (cliente == NULL) {
         printf("Erro de alocação de memória para a estrutura cliente.\n");
@@ -368,14 +380,6 @@ void cadastroCliente() {
     cliente->rua = NULL;
     cliente->celular = NULL;
     cliente->data = NULL;
-
-    // Abrindo o arquivo no modo "a" (anexar)
-    arquivo = fopen("clientes.txt", "a");
-    if (arquivo == NULL) {
-        printf("Erro ao abrir o arquivo de clientes.\n");
-        liberarMemoriaCliente(cliente);
-        return;
-    }
 
     // Obtendo dados do cliente
     printf("Informe o ID do cliente: ");
@@ -449,6 +453,8 @@ void cadastroCliente() {
 
 // Função auxiliar para liberar memória
 void liberarMemoriaProduto(Produtos *produto){
+    free(produto->descricao);
+    free(produto->categoria);
     free(produto);
 }
 
@@ -457,16 +463,16 @@ void cadastroProduto() {
     Produtos *produto = (Produtos *)malloc(sizeof(Produtos)); // Aloca memória para a estrutura
     size_t len = 0;
 
-    if (produto == NULL) {
-        printf("Erro de alocação de memória para a estrutura de produto.\n");
-        return;
-    }
-
     // Abrindo o arquivo no modo "a" (anexar)
     arquivo = fopen("produtos.txt", "a");
     if (arquivo == NULL) {
         printf("Erro ao abrir o arquivo de produtos.\n");
         free(produto); // Libera a memória alocada para a estrutura de produtos
+        return;
+    }
+
+    if (produto == NULL) {
+        printf("Erro de alocação de memória para a estrutura de produto.\n");
         return;
     }
 
@@ -483,8 +489,8 @@ void cadastroProduto() {
 
     // Obtendo dados do produto do usuário
     printf("Informe o codigo do produto: ");
-    scanf("%d", &produto->codigo);
-    getchar();
+    scanf("\n%d", &produto->codigo);
+    getchar(); // Limpa o buffer
 
     printf("Informe a descricao do produto: ");
     getline(&produto->descricao, &len, stdin);
@@ -665,8 +671,10 @@ int carregarProdutos(Produtos **listaProdutos, int *maxProdutos) {
         {1002, "Biscoito doce", "Panificacao", 0, 0, 12.50, 5, 0}
     };
 
+    int tamanhoProduto = sizeof(produtosFixos) / sizeof(produtosFixos[0]);
+
     // Copiar produtos fixos para a lista dinâmica, se houver capacidade
-    for (int i = 0; i < sizeof(produtosFixos) / sizeof(produtosFixos[0]); ++i) {
+    for (int i = 0; i < tamanhoProduto; ++i) {
         if (contador >= capacidade) {
             capacidade *= 2;
             *listaProdutos = realloc(*listaProdutos, capacidade * sizeof(Produtos));
@@ -716,16 +724,40 @@ int carregarProdutos(Produtos **listaProdutos, int *maxProdutos) {
 
     *maxProdutos = capacidade;
 
-    // Ordenando os produtos pelo código (ID) usando qsort
     qsort(*listaProdutos, contador, sizeof(Produtos), comparaProdutos);
 
     return contador; // Retorna o número de produtos carregados
 }
 
+// Função para salvar documento de venda
+void documentoVenda(Carrinho *carrinho, int numItensCarrinho) {
+    FILE *file = fopen("vendas.txt", "a"); // Abrir arquivo para escrita
+
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo para escrita.\n");
+        return;
+    }
+
+    Data data = dataAtual();
+    fprintf(file, "Data da Venda: %02d/%02d/%04d\n", data.dia, data.mes, data.ano);
+    fprintf(file, "Produtos Comprados:\n");
+    for (int i = 0; i < numItensCarrinho; i++) {
+        fprintf(file, "Codigo: %d\n", carrinho[i].codigo);
+        fprintf(file, "Descricao: %s\n", carrinho[i].descricao);
+        fprintf(file, "Preco Unitario: %.2f\n", carrinho[i].precoVenda);
+        fprintf(file, "Quantidade: %d\n", carrinho[i].quantidade);
+        fprintf(file, "Total: %.2f\n\n", carrinho[i].total);
+    }
+
+    fclose(file); // Fechar arquivo após escrita
+    printf("\nDocumento de venda gerado com sucesso.\n");
+}
+
 void novaVenda() {
     clear();
-    int quantidadeProdutos = 3;
+    int quantidadeProdutos = 50;
     Produtos *produtos = (Produtos *)malloc(quantidadeProdutos * sizeof(Produtos));
+    
     if (produtos == NULL) {
         printf("Erro ao alocar memória para produtos.\n");
         return;
@@ -836,30 +868,6 @@ int produtosFixos(Produtos listaProdutos[], int indice) {
     return indice; // Retorna o novo índice após adicionar os produtos dinâmicos
 }
 
-void documentoVenda(Carrinho *carrinho, int numItensCarrinho) {
-    FILE *file;
-    file = fopen("vendas.txt", "a"); // Abrir arquivo para escrita
-
-    if (file == NULL) {
-        printf("Erro ao abrir o arquivo.");
-        return;
-    }
-
-    Data data = dataAtual();
-    fprintf(file, "Data da Venda: %02d/%02d/%04d\n", data.dia, data.mes, data.ano);
-    fprintf(file, "Produtos Comprados:\n");
-    for (int i = 0; i < numItensCarrinho; i++) {
-        fprintf(file, "Codigo: %d\n", carrinho[i].codigo);
-        fprintf(file, "Descricao: %s\n", carrinho[i].descricao);
-        fprintf(file, "Preco Unitario: %.2f\n", carrinho[i].precoVenda);
-        fprintf(file, "Quantidade: %d\n", carrinho[i].quantidade);
-        fprintf(file, "Total: %.2f\n\n", carrinho[i].total);
-    }
-
-    fclose(file); // Fechar arquivo após escrita
-    printf("\nDocumento de venda gerado com sucesso.\n");
-}
-
 Data dataAtual() {
     time_t mytime;
     mytime = time(NULL);
@@ -888,8 +896,8 @@ void sangria(){
 
 }
 
-void pagamento() {
-   
+void pagamento(){
+    
 }
 
 float calcularTotalCarrinho(Carrinho carrinho[], int numItens) {
@@ -989,8 +997,383 @@ void fechaCaixa(){
     menuPrincipal();
 }
 
-void relatorios(){
+// Função para ler clientes do arquivo e armazenar em um array dinâmico
+int lerClientes(Clientes **clientes) {
+    FILE *arquivo = fopen("clientes.txt", "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return 0;
+    }
 
+    int capacidade = 10;
+    int contador = 0;
+    *clientes = malloc(capacidade * sizeof(Clientes));
+    if (*clientes == NULL) {
+        printf("Erro ao alocar memória.\n");
+        fclose(arquivo);
+        return 0;
+    }
+
+    char buffer[100]; // Buffer para ler uma linha do arquivo
+
+    // Leitura dos clientes do arquivo
+    while (fgets(buffer, sizeof(buffer), arquivo) != NULL) {
+        if (contador >= capacidade) {
+            capacidade += 10;
+            *clientes = realloc(*clientes, capacidade * sizeof(Clientes));
+            if (*clientes == NULL) {
+                printf("Erro ao realocar memória.\n");
+                fclose(arquivo);
+                return contador;
+            }
+        }
+
+        // Aloca memória para cada campo de string na estrutura Clientes
+        (*clientes)[contador].nome = malloc(100 * sizeof(char));
+        (*clientes)[contador].nomeSocial = malloc(100 * sizeof(char));
+        (*clientes)[contador].cpf = malloc(20 * sizeof(char));
+        (*clientes)[contador].rua = malloc(100 * sizeof(char));
+        (*clientes)[contador].celular = malloc(20 * sizeof(char));
+        (*clientes)[contador].data = malloc(20 * sizeof(char));
+
+        // Lê os dados do buffer
+        sscanf(buffer, "%d %99[^,], %99[^,], %19[^,], %99[^,], %d %19[^,], %19s",
+               &(*clientes)[contador].id,
+               (*clientes)[contador].nome,
+               (*clientes)[contador].nomeSocial,
+               (*clientes)[contador].cpf,
+               (*clientes)[contador].rua,
+               &(*clientes)[contador].numero,
+               (*clientes)[contador].celular,
+               (*clientes)[contador].data);
+
+        contador++;
+    }
+
+    fclose(arquivo);
+    return contador;
+}
+
+// Função de comparação para qsort por nome
+int comparaClientes(const void *a, const void *b) {
+    const Clientes *clienteA = (const Clientes *)a;
+    const Clientes *clienteB = (const Clientes *)b;
+    return strcmp(clienteA->nome, clienteB->nome);
+}
+
+// Função para ordenar clientes alfabeticamente e salvar no arquivo
+void clienteAlfabetica(const char *nomeArquivo) {
+    Clientes *clientes = NULL;
+    int numClientes = lerClientes(&clientes);
+
+    if (numClientes == 0) {
+        printf("Não há clientes para ordenar.\n");
+        return;
+    }
+
+    // Ordena os clientes pelo nome
+    qsort(clientes, numClientes, sizeof(Clientes), comparaClientes);
+
+    // Imprime os nomes ordenados
+    printf("Nomes dos clientes ordenados:\n");
+    for (int i = 0; i < numClientes; i++) {
+        printf("\n%s", clientes[i].nome);
+    }
+
+    // Abre o arquivo para escrita
+    FILE *arquivo = fopen(nomeArquivo, "w");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo %s para escrita.\n", nomeArquivo);
+        free(clientes);
+        return;
+    }
+
+    // Escreve os clientes ordenados no arquivo
+    for (int i = 0; i < numClientes; i++) {
+        fprintf(arquivo, "%d, %s, %s, %s, %s, %d, %s, %s\n",
+                clientes[i].id,
+                clientes[i].nome,
+                clientes[i].nomeSocial,
+                clientes[i].cpf,
+                clientes[i].rua,
+                clientes[i].numero,
+                clientes[i].celular,
+                clientes[i].data);
+    }
+
+    // Fecha o arquivo e libera a memória alocada
+    fclose(arquivo);
+    for (int i = 0; i < numClientes; i++) {
+        free(clientes[i].nome);
+        free(clientes[i].nomeSocial);
+        free(clientes[i].cpf);
+        free(clientes[i].rua);
+        free(clientes[i].celular);
+        free(clientes[i].data);
+    }
+    free(clientes);
+}
+
+// Função para listar clientes que compraram a partir de uma determinada data
+void clientePeriodo() {
+    char dataInicio[20];
+
+    printf("\nDigite a data inicial para a busca (dd/mm/yyyy): ");
+    scanf(" %19s", dataInicio);
+
+    // Lógica para buscar e listar clientes a partir da data fornecida
+    Clientes *clientes = NULL;
+    int numClientes = lerClientes(&clientes);
+
+    if (numClientes == 0) {
+        printf("Não há clientes para listar.\n");
+        return;
+    }
+
+    printf("Clientes que compraram a partir de %s:\n", dataInicio);
+
+    for (int i = 0; i < numClientes; i++) {
+        if (strncmp(dataInicio, clientes[i].data, 10) <= 0) {
+            printf("%s\n", clientes[i].nome);
+        }
+    }
+
+    free(clientes);
+}
+
+void listaClientes() {
+    clear();
+
+    int opcao = 0;
+
+    typedef struct {
+        int id;
+        char nome[100];
+    } Relatorios;
+
+    Relatorios clientes[] = {
+        {1,"Listagem de Clientes (ordenada em ordem alfabetica por nome)"},
+        {2,"Listagem dos Clientes que Compraram (em um determinado periodo)"},
+        {3,"Voltar ao menu"},
+    };
+
+    printf("\nRelatorio de Clientes\n");
+    for (size_t i = 0; i < sizeof(clientes) / sizeof(clientes[0]); i++) {
+        printf("%d - %s\n", clientes[i].id, clientes[i].nome);
+    }
+
+    printf("\nDigite a opcao desejada: ");
+    scanf("%d", &opcao);
+    getchar(); // Limpa o caractere de nova linha do buffer
+
+    switch (opcao) {
+        case 1:
+            clienteAlfabetica("clientes_ordenados.txt"); // Nome do arquivo para salvar os clientes ordenados
+            break;
+        case 2:
+            clientePeriodo();
+            break;
+        case 3:
+            menuPrincipal();
+            break;
+        default:
+            printf("Opcao invalida.\n");
+            break;
+    }
+}
+
+int lerProdutos(Produtos **produtos) {
+    FILE *arquivo = fopen("produtos.txt", "r");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo.\n");
+        return 0;
+    }
+
+    int capacidade = 10;
+    int contador = 0;
+    *produtos = malloc(capacidade * sizeof(Produtos));
+    if (*produtos == NULL) {
+        printf("Erro ao alocar memória.\n");
+        fclose(arquivo);
+        return 0;
+    }
+
+    char buffer[256]; // Buffer para ler uma linha do arquivo
+
+    while (fgets(buffer, sizeof(buffer), arquivo) != NULL) {
+        if (contador >= capacidade) {
+            capacidade += 10;
+            *produtos = realloc(*produtos, capacidade * sizeof(Produtos));
+            if (*produtos == NULL) {
+                printf("Erro ao realocar memória.\n");
+                fclose(arquivo);
+                return contador;
+            }
+        }
+
+        // Aloca memória para cada campo de string na estrutura Produtos
+        (*produtos)[contador].descricao = malloc(100 * sizeof(char));
+        (*produtos)[contador].categoria = malloc(100 * sizeof(char));
+
+        if ((*produtos)[contador].descricao == NULL || (*produtos)[contador].categoria == NULL) {
+            printf("Erro ao alocar memória para as strings.\n");
+            fclose(arquivo);
+            return contador;
+        }
+
+        // Lê os dados do buffer
+        sscanf(buffer, "%d %99[^,], %99[^,], %f %f %f %d %d",
+               &(*produtos)[contador].codigo,
+               (*produtos)[contador].descricao,
+               (*produtos)[contador].categoria,
+               &(*produtos)[contador].precoCompra,
+               &(*produtos)[contador].margemLucro,
+               &(*produtos)[contador].precoVenda,
+               &(*produtos)[contador].quantidadeEstoque,
+               &(*produtos)[contador].estoqueMinimo);
+
+        contador++;
+    }
+
+    fclose(arquivo);
+    return contador;
+}
+
+int comparaProduto(const void *a, const void *b) {
+    const Produtos *produtoA = (const Produtos *)a;
+    const Produtos *produtoB = (const Produtos *)b;
+    return strcmp(produtoA->descricao, produtoB->descricao);
+}
+
+void produtoAlfabetica(const char *nomeArquivo) {
+    Produtos *produtos = NULL;
+    int numProdutos = lerProdutos(&produtos);
+
+    if (numProdutos == 0) {
+        printf("Não há produtos para ordenar.\n");
+        return;
+    }
+
+    // Ordena os produtos pela descrição
+    qsort(produtos, numProdutos, sizeof(Produtos), comparaProduto);
+
+    // Imprime as descrições ordenadas
+    printf("Descrições dos produtos ordenadas:\n");
+    for (int i = 0; i < numProdutos; i++) {
+        printf("%s\n", produtos[i].descricao);
+    }
+
+    // Abre o arquivo para escrita
+    FILE *arquivo = fopen(nomeArquivo, "w");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo %s para escrita.\n", nomeArquivo);
+        free(produtos);
+        return;
+    }
+
+    // Escreve os produtos ordenados no arquivo
+    for (int i = 0; i < numProdutos; i++) {
+        fprintf(arquivo, "%d, %s, %s, %.2f, %.2f, %.2f, %d, %d\n",
+                produtos[i].codigo,
+                produtos[i].descricao,
+                produtos[i].categoria,
+                produtos[i].precoCompra,
+                produtos[i].margemLucro,
+                produtos[i].precoVenda,
+                produtos[i].quantidadeEstoque,
+                produtos[i].estoqueMinimo);
+    }
+
+    // Fecha o arquivo e libera a memória alocada
+    fclose(arquivo);
+    for (int i = 0; i < numProdutos; i++) {
+        free(produtos[i].descricao);
+        free(produtos[i].categoria);
+    }
+    free(produtos);
+}
+
+void listaProdutos(){
+    clear();
+
+    int opcao = 0;
+
+    typedef struct {
+        int id;
+        char nome[100];
+    } Relatorios;
+
+    Relatorios produtos[] = {
+        {1,"Listagem de Produtos (ordenada em ordem alfabetica por descricao)"},
+        {2,"Listagem de Produtos com Estoque zero ou Minimo(ordenada em ordem alfabetica por descricao)"},
+        {3,"Voltar ao menu"},
+    };
+
+    printf("\nRelatorio de Produtos\n");
+    for (size_t i = 0; i < sizeof(produtos) / sizeof(produtos[0]); i++) {
+        printf("%d - %s\n", produtos[i].id, produtos[i].nome);
+    }
+
+    printf("\nDigite a opcao desejada: ");
+    scanf("%d", &opcao);
+    getchar(); // Limpa o caractere de nova linha do buffer
+
+    switch (opcao) {
+        case 1:
+            produtoAlfabetica("produtos_ordenados.txt"); // Nome do arquivo para salvar os clientes ordenados
+            break;
+        case 2:
+            clientePeriodo();
+            break;
+        case 3:
+            menuPrincipal();
+            break;
+        default:
+            printf("Opcao invalida.\n");
+            break;
+    }
+}
+
+void relatorios() {
+    clear();
+    int opcao = 0;
+
+    Relatorios relatorioMenu[] = {
+        {1, "Listagem dos Clientes"},
+        {2, "Listagem dos Produtos"},
+        {3, "Listagem das Vendas"},
+        {4, "Retornar ao Menu Principal"},
+    };
+
+    printf("\nRelatorios\n");
+    printf("\nSelecione uma das opcoes abaixo:\n\n");
+
+    for (int i = 0; i < 4; i++){
+        printf("%d - %s\n", relatorioMenu[i].id, relatorioMenu[i].nome);
+    }
+
+    printf("\nDigite a opcao desejada: ");
+    scanf("%d", &opcao);
+
+    switch (opcao)
+    {
+    case 1:
+        listaClientes();
+        break;
+    case 2:
+        listaProdutos();
+        break;
+    case 3:
+        /* code */
+        break;
+    case 4:
+        /* code */
+        break;
+    
+    default:
+        printf("Opcao invalida, digite novamente\n");
+        break;
+    }
 }
 
 void permisaoCaixa(){
