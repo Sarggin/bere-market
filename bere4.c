@@ -90,29 +90,22 @@ void menuVendas();
 void opcaoVendas(int opcao);
 void novaVenda();
 void documentoVenda(Carrinho *carrinho, int numItensCarrinho);
-int produtosFixos(Produtos *listaProdutos, int indice);
 void carrinho(Carrinho carrinho[], int numItens);
 void sangria();
 void pagamento();
+void relatorios();
 void aberturaCaixa();
 void permisaoCaixa();
 void fechaCaixa();
 void resetVariavelGlobal();
-void relatorios();
 void sair();
 void clear();
 Data dataAtual();
-void opcoesRelatorio(int opcao);
-void relatorioClientes();
-void relatorioProdutos();
-void relatorioVendas();
-void listagemClientesAlfabetica();
-void listagemClientesPeriodo();
-Relatorios* buscarRelatorio(Relatorios relatorios[], int tamanho, int opcao);
+float calcularTotalCarrinho(Carrinho carrinho[], int numItens);
 void realizarPagamentoDinheiro(float total);
 void realizarPagamentoCartao(float total);
 void realizarPagamentoMisto(float total);
-float calcularTotalCarrinho(Carrinho carrinho[], int numItens);
+
 
 void menuPrincipal() {
     clear();
@@ -404,7 +397,7 @@ void cadastroCliente() {
     getline(&cliente->rua, &len, stdin);
     cliente->rua[strcspn(cliente->rua, "\n")] = '\0';
 
-    printf("Informe o número da casa do cliente: ");
+    printf("Informe o numero da casa do cliente: ");
     scanf("%d", &cliente->numero);
     getchar(); // Limpar o buffer de entrada
 
@@ -454,6 +447,7 @@ void liberarMemoriaProduto(Produtos *produto){
 void cadastroProduto() {
     FILE *arquivo;
     Produtos *produto = (Produtos *)malloc(sizeof(Produtos)); // Aloca memória para a estrutura
+    size_t len = 0;
 
     if (produto == NULL) {
         printf("Erro de alocação de memória para a estrutura de produto.\n");
@@ -482,9 +476,11 @@ void cadastroProduto() {
     // Obtendo dados do produto do usuário
     printf("Informe o codigo do produto: ");
     scanf("%d", &produto->codigo);
+    getchar();
 
     printf("Informe a descricao do produto: ");
-    fgets(produto->descricao, 100, stdin);
+    getline(&produto->descricao, &len, stdin);
+    produto->descricao[strcspn(produto->descricao, "\n")] = '\0';
 
     // Validações básicas
     if (strlen(produto->descricao) == 0) {
@@ -496,6 +492,7 @@ void cadastroProduto() {
 
     printf("Informe a categoria do produto (Alimento, Material de Limpeza, Panificacao): ");
     fgets(produto->categoria, 50, stdin);
+    produto->categoria[strcspn(produto->categoria, "\n")] = '\0';
 
     printf("Informe o preco de compra do produto: ");
     scanf("%f", &produto->precoCompra);
@@ -691,7 +688,6 @@ void novaVenda() {
     }
 
     int numProdutos = carregarProdutos(&produtos, &quantidadeProdutos);
-    numProdutos = produtosFixos(produtos, numProdutos);
 
     int codigoCompra;
     int quantidade;
@@ -849,43 +845,7 @@ void sangria(){
 }
 
 void pagamento() {
-    clear();
-
-    int opcaoPagamento;
-    float totalCompra = calcularTotalCarrinho(carrinho, numItensCarrinho);
-    float desconto;
-
-    printf("Total da compra: R$ %.2f\n", totalCompra);
-
-    printf("Digite o percentual de desconto (0 a 100): ");
-    scanf("%f", &desconto);
-
-    desconto = (desconto / 100) * totalCompra;
-
-    float totalComDesconto = totalCompra - desconto;
-
-    printf("\nEscolha a forma de pagamento:\n");
-    printf("1 - Dinheiro\n");
-    printf("2 - Cartao\n");
-    printf("3 - Misto\n");
-    printf("Digite a opcao desejada: ");
-    scanf("%d", &opcaoPagamento);
-
-    switch (opcaoPagamento) {
-        case 1:
-            realizarPagamentoDinheiro(totalComDesconto);
-            break;
-        case 2:
-            realizarPagamentoCartao(totalComDesconto);
-            break;
-        case 3:
-            realizarPagamentoMisto(totalComDesconto);
-            break;
-        default:
-            printf("Opcao invalida! Retornando ao menu de vendas.\n");
-            menuVendas();
-            break;
-    }
+   
 }
 
 float calcularTotalCarrinho(Carrinho carrinho[], int numItens) {
@@ -983,6 +943,10 @@ void fechaCaixa(){
     system("pause");
 
     menuPrincipal();
+}
+
+void relatorios(){
+
 }
 
 void permisaoCaixa(){
