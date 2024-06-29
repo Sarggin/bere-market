@@ -14,9 +14,7 @@
 // VariaveIS Globais
 float dinheiroCaixa;
 bool statusCaixa = 0;
-int numCaixa = 0;
-
-int numItensCarrinho;
+int numItensCarrinho, numCaixa = 0;
 
 
 // Structs do sistema, Matrizes heterogêneas
@@ -100,7 +98,7 @@ void novaVenda();
 void documentoVenda(Carrinho *carrinho, int numItensCarrinho);
 void carrinho(Carrinho carrinho[], int numItens);
 void sangria();
-void pagamento();
+void pagamento(Carrinho carrinho[], float totalCarrinho);
 void relatorios();
 void aberturaCaixa();
 void permisaoCaixa();
@@ -116,8 +114,6 @@ void realizarPagamentoMisto(float total);
 void listaCliente();
 void clienteAlfabetica();
 void clientePeriodo();
-
-
 
 void menuPrincipal() {
     clear();
@@ -613,6 +609,9 @@ void opcaoVendas(int opcao){
         scanf("%d", &opcao);
     }
 
+    Carrinho carrinho[50]; // Supondo que o carrinho terá no máximo 50 itens
+    float totalCarrinho = 0.0;
+
     switch (opcao) {
     case 1:
         novaVenda();
@@ -621,7 +620,7 @@ void opcaoVendas(int opcao){
         sangria();
         break;
     case 3:
-        pagamento();
+        pagamento(carrinho, totalCarrinho);
         break;
     case 4:
         menuPrincipal();
@@ -763,14 +762,14 @@ void documentoCarrinho(Carrinho *carrinho, int numItensCarrinho) {
     }
 
     Data data = dataAtual();
-    fprintf(file, "Data da Venda: %02d/%02d/%04d\n", data.dia, data.mes, data.ano);
+    fprintf(file, "\nData da Venda: %02d/%02d/%04d\n", data.dia, data.mes, data.ano);
     fprintf(file, "Produtos no Carrinho:\n");
     for (int i = 0; i < numItensCarrinho; i++) {
         fprintf(file, "Codigo: %d\n", carrinho[i].codigo);
         fprintf(file, "Descricao: %s\n", carrinho[i].descricao);
         fprintf(file, "Preco Unitario: %.2f\n", carrinho[i].precoVenda);
         fprintf(file, "Quantidade: %d\n", carrinho[i].quantidade);
-        fprintf(file, "Total: %.2f\n\n", carrinho[i].total);
+        fprintf(file, "Total: %.2f\n", carrinho[i].total);
     }
 
     fclose(file); // Fechar arquivo após escrita
@@ -920,8 +919,58 @@ void sangria(){
 
 }
 
-void pagamento(){
+float carregaCarrinhoAtual(Carrinho carrinho[], float total) {
+    FILE *arquivo;
+
+    arquivo = fopen("carrinho.txt", "r");
+
+    if (arquivo == NULL) {
+        printf("\nErro ao abrir arquivo para calcular o total do carrinho.\n");
+        return 0;
+    }
+
+    char linha[100];
+    char descricaoTemp[100];
+
+    // Ignorar a primeira linha (Data da Venda)
+    fgets(linha, sizeof(linha), arquivo); // Descarta a linha
+
+    // Ignorar a linha "Produtos no Carrinho:"
+    fgets(linha, sizeof(linha), arquivo); // Descarta a linha
+
+    int i = 0;
+    while (fgets(linha, sizeof(linha), arquivo) != NULL) {
+        if (strstr(linha, "Codigo: ") != NULL) {
+            sscanf(linha, "Codigo: %d", &carrinho[i].codigo);
+        }
+        else if (strstr(linha, "Descricao: ") != NULL) {
+            sscanf(linha, "Descricao: %[^\n]", descricaoTemp);
+            carrinho[i].descricao = strdup(descricaoTemp);
+        }
+        else if (strstr(linha, "Preco Unitario: ") != NULL) {
+            sscanf(linha, "Preco Unitario: %f", &carrinho[i].precoVenda);
+        }
+        else if (strstr(linha, "Quantidade: ") != NULL) {
+            sscanf(linha, "Quantidade: %d", &carrinho[i].quantidade);
+        }
+        else if (strstr(linha, "Total: ") != NULL) {
+            sscanf(linha, "Total: %f", &carrinho[i].total);
+            total += carrinho[i].total;
+            i++;
+        }
+    }
+
+    fclose(arquivo);
+    return total;
+}
+
+void pagamento(Carrinho carrinho[], float totalCarrinho) {
+    totalCarrinho = carregaCarrinhoAtual(carrinho, totalCarrinho);
     
+    printf("\nMenu Pagamento\n");
+    printf("\nComo deseja pagar o total de R$ %.2f\n", totalCarrinho);
+
+    system("pause");
 }
 
 float calcularTotalCarrinho(Carrinho carrinho[], int numItens) {

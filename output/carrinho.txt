@@ -5,3 +5,11 @@ Descricao: 32
 Preco Unitario: 65.00
 Quantidade: 6
 Total: 390.00
+
+Data da Venda: 29/06/2024
+Produtos no Carrinho:
+Codigo: 20
+Descricao: 32
+Preco Unitario: 65.00
+Quantidade: 2
+Total: 130.00
