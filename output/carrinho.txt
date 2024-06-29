@@ -1,5 +1,5 @@
 Data da Venda: 29/06/2024
-Produtos Comprados:
+Produtos no Carrinho:
 Codigo: 20
 Descricao: 32
 Preco Unitario: 65.00

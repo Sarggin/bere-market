@@ -753,6 +753,30 @@ void documentoVenda(Carrinho *carrinho, int numItensCarrinho) {
     printf("\nDocumento de venda gerado com sucesso.\n");
 }
 
+// Função para salvar documento de venda
+void documentoCarrinho(Carrinho *carrinho, int numItensCarrinho) {
+    FILE *file = fopen("carrinho.txt", "a"); // Abrir arquivo para escrita
+
+    if (file == NULL) {
+        printf("Erro ao abrir o arquivo para escrita.\n");
+        return;
+    }
+
+    Data data = dataAtual();
+    fprintf(file, "Data da Venda: %02d/%02d/%04d\n", data.dia, data.mes, data.ano);
+    fprintf(file, "Produtos no Carrinho:\n");
+    for (int i = 0; i < numItensCarrinho; i++) {
+        fprintf(file, "Codigo: %d\n", carrinho[i].codigo);
+        fprintf(file, "Descricao: %s\n", carrinho[i].descricao);
+        fprintf(file, "Preco Unitario: %.2f\n", carrinho[i].precoVenda);
+        fprintf(file, "Quantidade: %d\n", carrinho[i].quantidade);
+        fprintf(file, "Total: %.2f\n\n", carrinho[i].total);
+    }
+
+    fclose(file); // Fechar arquivo após escrita
+    printf("\nDocumento de venda gerado com sucesso.\n");
+}
+
 void novaVenda() {
     clear();
     int quantidadeProdutos = 50;
@@ -769,8 +793,15 @@ void novaVenda() {
     int quantidade;
     char continuarCompra = 's';
 
-    while (continuarCompra == 's' || continuarCompra == 'S') {
+    Carrinho *carrinho = (Carrinho *)malloc(quantidadeProdutos * sizeof(Carrinho));
+    if (carrinho == NULL) {
+        printf("Erro ao alocar memória para carrinho.\n");
+        free(produtos);
+        return;
+    }
+    int numItensCarrinho = 0;
 
+    while (continuarCompra == 's' || continuarCompra == 'S') {
         clear();    
         // Exibindo cabeçalho e lista de produtos disponíveis
         exibirCabecalho();
@@ -781,15 +812,6 @@ void novaVenda() {
 
         int encontrado = 0;
         
-        Carrinho *carrinho = (Carrinho *)malloc(quantidadeProdutos * sizeof(Carrinho));
-
-        if (carrinho == NULL) {
-            printf("Erro ao alocar memória para carrinho.\n");
-            free(produtos);
-            return;
-        }
-        int numItensCarrinho = 0;
-    
         printf("\nCarrinho de Compras\n");
         printf("\nInforme o codigo do produto a ser comprado: ");
         scanf("%d", &codigoCompra);
@@ -823,9 +845,6 @@ void novaVenda() {
                     }
                 }
 
-                // Gerar documento de venda
-                documentoVenda(carrinho, numItensCarrinho);
-
                 printf("\nProduto adicionado ao carrinho.\n");
                 printf("Descricao: %s\n", produtos[i].descricao);
                 printf("Preco Unitario: R$ %.2f\n", produtos[i].precoVenda);
@@ -846,7 +865,12 @@ void novaVenda() {
         scanf(" %c", &continuarCompra);
     }
 
+    // Gerar documento de venda
+    documentoVenda(carrinho, numItensCarrinho);
+    documentoCarrinho(carrinho, numItensCarrinho);
+
     free(produtos);
+    free(carrinho);
 
     printf("Venda concluída com sucesso!\n");
     menuVendas();
