@@ -4,11 +4,81 @@ Codigo: 20
 Descricao: 32
 Preco Unitario: 65.00
 Quantidade: 6
-Total: 390.00Data da Venda: 29/06/2024
+Total: 390.00
+
+Data da Venda: 29/06/2024
 Produtos Comprados:
 Codigo: 20
 Descricao: 32
 Preco Unitario: 65.00
 Quantidade: 2
 Total: 130.00
+
+Data da Venda: 29/06/2024
+Produtos Comprados:
+Codigo: 20
+Descricao: 32
+Preco Unitario: 65.00
+Quantidade: 2
+Total: 130.00
+
+Codigo: 20
+Descricao: 32
+Preco Unitario: 65.00
+Quantidade: 3
+Total: 195.00
+
+Data da Venda: 29/06/2024
+Produtos Comprados:
+Codigo: 20
+Descricao: 32
+Preco Unitario: 65.00
+Quantidade: 2
+Total: 130.00
+
+Data da Venda: 29/06/2024
+Produtos Comprados:
+Codigo: 1000
+Descricao: Cafe
+Preco Unitario: 7.70
+Quantidade: 3
+Total: 23.10
+
+Data da Venda: 29/06/2024
+Produtos Comprados:
+Codigo: 20
+Descricao: 32
+Preco Unitario: 65.00
+Quantidade: 3
+Total: 195.00
+
+Data da Venda: 29/06/2024
+Produtos Comprados:
+Codigo: 1001
+Descricao: Esponja
+Preco Unitario: 2.99
+Quantidade: 2
+Total: 5.98
+
+Data da Venda: 29/06/2024
+Produtos Comprados:
+Codigo: 20
+Descricao: 32
+Preco Unitario: 65.00
+Quantidade: 6
+Total: 390.00
+
+Codigo: 20
+Descricao: 32
+Preco Unitario: 65.00
+Quantidade: 2
+Total: 130.00
+
+Data da Venda: 29/06/2024
+Produtos Comprados:
+Codigo: 20
+Descricao: 32
+Preco Unitario: 65.00
+Quantidade: 3
+Total: 195.00
 

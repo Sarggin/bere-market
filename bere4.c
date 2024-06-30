@@ -1030,12 +1030,44 @@ float carregaCarrinhoAtual(Carrinho carrinho[], float total) {
 }
 
 void pagamento(Carrinho carrinho[], float totalCarrinho) {
+    int opcaoPagamento = 0;
     totalCarrinho = carregaCarrinhoAtual(carrinho, totalCarrinho);
+
+    if (totalCarrinho == 0){
+        printf("\nNao ha nada para pagar, o carrinho atual esta zerado\n");
+        return;
+    }
     
     printf("\nMenu Pagamento\n");
     printf("\nComo deseja pagar o total de R$ %.2f\n", totalCarrinho);
+    printf("\n1.Cartao\n2.Dinheiro\n3.Pagamento Misto\n4.Voltar ao menu\n\nEscolha a opcao desejada: ");
+    scanf("%d", &opcaoPagamento);
 
-    system("pause");
+    switch (opcaoPagamento)
+    {
+    case 1:
+        realizarPagamentoCartao(totalCarrinho);
+        break;
+    case 2:
+        realizarPagamentoDinheiro(totalCarrinho);
+        break;
+    case 3:
+        realizarPagamentoMisto(totalCarrinho);
+        break;
+    case 4:
+        menuVendas();
+        break;
+    default:
+        printf("\nOpcao Invalida, digite novamente.\n");
+        break;
+    }
+}
+
+void zeraCarrinho(){
+    FILE *arquivo;
+
+    arquivo = fopen("carrinho.txt", "w");
+    fclose(arquivo);
 }
 
 float calcularTotalCarrinho(Carrinho carrinho[], int numItens) {
@@ -1062,7 +1094,11 @@ void realizarPagamentoDinheiro(float total) {
 
     troco = valorPago - total;
     printf("Troco: R$ %.2f\n", troco);
+
+    dinheiroCaixa += valorPago - troco;
+
     system("pause");
+    zeraCarrinho();
     menuVendas();
 }
 
@@ -1082,6 +1118,8 @@ void realizarPagamentoMisto(float total) {
     printf("Digite o valor pago em dinheiro: R$ ");
     scanf("%f", &valorPagoDinheiro);
 
+    dinheiroCaixa += valorPagoDinheiro;
+
     valorRestante = total - valorPagoDinheiro;
 
     printf("Valor restante a pagar no cartao: R$ %.2f\n", valorRestante);
@@ -1094,6 +1132,7 @@ void realizarPagamentoMisto(float total) {
     }
 
     printf("Pagamento misto realizado com sucesso!\n");
+    zeraCarrinho();
     system("pause");
     menuVendas();
 }
@@ -1127,11 +1166,21 @@ void aberturaCaixa(){
     }
 }
 
-void fechaCaixa(){
-    
-    printf("\nCaixa Fechado com sucesso");
-    system("pause");
+void fechaCaixa(Carrinho **carrinho) {
+    permisaoCaixa();
 
+    int totalCarrinho = 0;
+    totalCarrinho = carregaCarrinhoAtual(*carrinho, totalCarrinho);
+
+    if (totalCarrinho == 0) {
+        printf("\nHa itens no carrinho, o caixa não pode ser fechado.\n");
+        system("pause");
+        return;
+    }
+
+    printf("\nCaixa fechado com sucesso\n");
+    system("pause");
+    resetVariavelGlobal();
     menuPrincipal();
 }
 
@@ -1472,6 +1521,162 @@ void listaProdutos(){
     }
 }
 
+void vendasPeriodo() {
+    FILE *arquivo;
+    char periodo[12];
+    char buffer[256];  // Buffer temporário para leitura da linha
+    Carrinho carrinho;
+
+    arquivo = fopen("vendas.txt", "r");
+    if (arquivo == NULL) {
+        printf("\nErro ao abrir o arquivo.\n");
+        system("pause");
+        return;
+    }
+
+    printf("\nDigite o periodo desejado (dd/mm/yyyy): ");
+    scanf("%s", periodo);
+
+    printf("\nVendas do periodo %s:\n", periodo);
+
+    while (fgets(buffer, sizeof(buffer), arquivo)) {
+        // Liberar memória anteriormente alocada para evitar vazamentos
+        if (carrinho.descricao != NULL) {
+            free(carrinho.descricao);
+        }
+
+        // Alocar memória para a descrição
+        carrinho.descricao = malloc(100 * sizeof(char));
+        if (carrinho.descricao == NULL) {
+            printf("Erro ao alocar memória.\n");
+            fclose(arquivo);
+            return;
+        }
+
+        // Ler os dados da linha
+        sscanf(buffer, "%d %s %f %d %f",
+               &carrinho.codigo, 
+               carrinho.descricao, 
+               &carrinho.precoVenda, 
+               &carrinho.quantidade, 
+               &carrinho.total);
+
+        // Imprimir os dados lidos
+        printf("%d %s %.2f %d %.2f\n", 
+               carrinho.codigo, 
+               carrinho.descricao, 
+               carrinho.precoVenda, 
+               carrinho.quantidade, 
+               carrinho.total);
+    }
+
+    // Liberar memória final
+    if (carrinho.descricao != NULL) {
+        free(carrinho.descricao);
+    }
+
+    fclose(arquivo);
+    system("pause");
+}
+
+void faturamentoVendas() {
+    FILE *arquivo;
+    char periodo[12];
+    char dataVenda[12];
+    char buffer[256];  // Buffer temporário para leitura da linha
+    Carrinho carrinho;
+    float faturamentoTotal = 0.0;
+
+    arquivo = fopen("vendas.txt", "r");
+    if (arquivo == NULL) {
+        printf("\nErro ao abrir o arquivo.\n");
+        system("pause");
+        return;
+    }
+
+    printf("\nDigite o periodo desejado (dd/mm/yyyy): ");
+    scanf("%s", periodo);
+
+    printf("\nProcessando vendas...\n");
+    while (fgets(buffer, sizeof(buffer), arquivo)) {
+        // Alocar memória para a descrição
+        carrinho.descricao = malloc(100 * sizeof(char));
+        if (carrinho.descricao == NULL) {
+            printf("Erro ao alocar memória.\n");
+            fclose(arquivo);
+            return;
+        }
+
+        // Inicializar a string dataVenda para garantir que esteja limpa
+        memset(dataVenda, 0, sizeof(dataVenda));
+
+        // Ler os dados da linha incluindo a data da venda
+        if (sscanf(buffer, "%d %99s %f %d %f %11s",
+                   &carrinho.codigo, 
+                   carrinho.descricao, 
+                   &carrinho.precoVenda, 
+                   &carrinho.quantidade, 
+                   &carrinho.total,
+                   dataVenda) == 6) {
+            // Verificar se a data da venda corresponde ao período desejado
+            if (strcmp(dataVenda, periodo) == 0) {
+                faturamentoTotal += carrinho.total;
+            }
+        } else {
+            printf("Erro ao ler a linha: %s\n", buffer);
+        }
+
+        // Liberar memória alocada para a descrição
+        free(carrinho.descricao);
+    }
+
+    fclose(arquivo);
+
+    printf("\nFaturamento total no periodo %s: %.2f\n\n", periodo, faturamentoTotal);
+    system("pause");
+}
+
+void listaVendas(){
+    clear();
+
+    int opcao = 0;
+
+    typedef struct {
+        int id;
+        char nome[100];
+    } Relatorios;
+
+    Relatorios vendas[] = {
+        {1,"Listagem das Vendas (em um determinado periodo)"},
+        {2,"Faturamento Consolidado - em um periodo"},
+        {3,"Voltar ao menu"},
+    };
+
+    printf("\nRelatorio de Produtos\n");
+    for (size_t i = 0; i < sizeof(vendas) / sizeof(vendas[0]); i++) {
+        printf("%d - %s\n", vendas[i].id, vendas[i].nome);
+    }
+
+    printf("\nDigite a opcao desejada: ");
+    scanf("%d", &opcao);
+    getchar(); // Limpa o caractere de nova linha do buffer
+
+    switch (opcao) {
+        case 1:
+            vendasPeriodo();
+            break;
+        case 2:
+            faturamentoVendas();
+            break;
+        case 3:
+            menuPrincipal();
+            break;
+        default:
+            printf("\nOpcao invalida.\n");
+            break;
+    }
+}
+
 void relatorios() {
     clear();
     int opcao = 0;
@@ -1502,12 +1707,11 @@ void relatorios() {
         listaProdutos();
         break;
     case 3:
-        /* code */
+        listaVendas();
         break;
     case 4:
-        /* code */
+        menuPrincipal();
         break;
-    
     default:
         printf("Opcao invalida, digite novamente\n");
         break;
@@ -1534,7 +1738,6 @@ void permisaoCaixa(){
 void resetVariavelGlobal(){
     dinheiroCaixa= 0;
     statusCaixa = 0;
-    numCaixa = 0;
 }
 
 void sair() {
